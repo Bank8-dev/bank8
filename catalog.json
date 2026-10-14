@@ -1,0 +1,44 @@
+[
+  {
+    "service_type": "bank8:ledger",
+    "binary": "bank8-ledger",
+    "database_env_vars": [
+      "BANK8_LEDGER_DATABASE_URL"
+    ]
+  },
+  {
+    "service_type": "bank8:payments",
+    "binary": "bank8-payments",
+    "database_env_vars": [
+      "BANK8_PAYMENTS_DATABASE_URL"
+    ]
+  },
+  {
+    "service_type": "bank8:fdx",
+    "binary": "bank8-fdx",
+    "database_env_vars": [
+      "BANK8_FDX_DATABASE_URL"
+    ]
+  },
+  {
+    "service_type": "bank8:reporting",
+    "binary": "bank8-reporting",
+    "database_env_vars": [
+      "BANK8_REPORTING_DATABASE_URL"
+    ]
+  },
+  {
+    "service_type": "bank8:risk",
+    "binary": "bank8-risk",
+    "database_env_vars": [
+      "BANK8_RISK_DATABASE_URL"
+    ]
+  },
+  {
+    "service_type": "bank8:compliance",
+    "binary": "bank8-compliance",
+    "database_env_vars": [
+      "BANK8_COMPLIANCE_DATABASE_URL"
+    ]
+  }
+]
