@@ -99,6 +99,7 @@ graph TD
 | `sdk/rust/bank8` | Rust facade | Unified namespace facade: typed clients + contracts | `sdk/rust/bank8/README.md` |
 | `apps/{ebank,efintech,eteller,admin}` | Flutter apps | Customer and staff experiences | `apps/*/{README,DESIGN,BUSINESS}.md` |
 | `bank8-e2e` | Playwright | UI-only end-to-end suite through the BFF proxy | `bank8-e2e/README.md` |
+| `bank8-site` | Website | The public website at bank8.dev (Docusaurus on `@sentin8/site-engine`; product/app/SDK pages + harvested reference) |
 | `packaging/debian` | Packaging | The `bank8` .deb for install-based distribution | `packaging/README.md` |
 
 ## 5. Key Traits and Data Structures
