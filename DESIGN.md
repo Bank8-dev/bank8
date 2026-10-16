@@ -241,7 +241,6 @@ idempotent seeds.
   adds its own capped pool on the same database.
 - SSE push (no polling) on every consume loop; NOTIFY + 5s safety poll
   on the relays.
-- mimalloc global allocator across all binaries (workspace posture).
 - Captain auto-scale gates per service (busy 60s / idle 300s), rolling
   upgrades with drain.
 
