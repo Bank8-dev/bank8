@@ -128,7 +128,7 @@ sequenceDiagram
     L->>L: seed internal accounts (idempotent)
     B-->>F: SSE consumer (group bank8-fdx-envinit)
     F->>F: auto-register provider profile
-    Note over L,F: platform emits; verticals self-init —<br/>zero vertical knowledge in sentin8
+    Note over L,F: platform emits, verticals self-init —<br/>zero vertical knowledge in sentin8
 ```
 
 ## 3. Data Model
@@ -137,7 +137,8 @@ One database (`bank8`), one schema per service (schema-per-service):
 
 ```mermaid
 erDiagram
-    BANK8_DB["bank8 database"] ||--|| SCHEMA_LEDGER : "schema ledger"
+    BANK8_DB["bank8 database"]
+    BANK8_DB ||--|| SCHEMA_LEDGER : "schema ledger"
     BANK8_DB ||--|| SCHEMA_PAYMENTS : "schema payments"
     BANK8_DB ||--|| SCHEMA_FDX : "schema fdx"
     SCHEMA_LEDGER ||--|{ TBL_LEDGER : "domain tables (44, unprefixed)"
