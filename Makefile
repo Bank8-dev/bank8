@@ -14,6 +14,16 @@
 SHELL := /bin/bash
 CARGO ?= cargo
 
+# Build identity stamps (BUILDID-1, sentin8-build-info README §3): the
+# stamps ride the SAME shell line as the cargo command — make runs each
+# recipe line in its own shell, so a standalone `export …` line would
+# evaporate before cargo starts. The hash resolves via PLAIN `git
+# rev-parse` (no -C path): the stamp expands AFTER the `cd` into the
+# repo, so a repo-relative `git -C` would resolve from INSIDE and miss
+# (stamping every binary EMPTY). Inside the build-services loop the
+# `cd bank8-$$s` has already happened when the prefix expands.
+stamp_env = SENTIN8_BUILD_PROFILE=$(if $(RELEASE),release,debug) SENTIN8_GIT_SHA=$$(git rev-parse --short HEAD 2>/dev/null)
+
 SERVICES := ledger payments fdx reporting risk compliance
 APPS := admin eteller efintech ebank
 
@@ -26,20 +36,20 @@ help: ## Show this help
 build: build-sdk build-services ## Build the group in DAG order
 
 build-sdk: ## Build the bank8 facade workspace (services depend on this)
-	@cd bank8-sdk && $(CARGO) build
+	@cd bank8-sdk && $(call stamp_env,bank8-sdk) $(CARGO) build
 
 build-services: build-sdk ## Build every bank8 service repo
 	@for s in $(SERVICES); do \
 		echo "=== bank8-$$s ==="; \
-		(cd bank8-$$s && $(CARGO) build) || exit 1; \
+		(cd bank8-$$s && $(call stamp_env,bank8-$$s) $(CARGO) build) || exit 1; \
 	done
 
 test: ## Run the SDK facade tests + per-service suites
-	@cd bank8-sdk && $(CARGO) test
-	@for s in $(SERVICES); do (cd bank8-$$s && $(CARGO) test) || true; done
+	@cd bank8-sdk && $(call stamp_env,bank8-sdk) $(CARGO) test
+	@for s in $(SERVICES); do (cd bank8-$$s && $(call stamp_env,bank8-$$s) $(CARGO) test) || true; done
 
 enroll: ## Enroll every bank8 repo (composable registration, RS §6)
-	@cd ../sentin8/sentin8-cli && $(CARGO) run --bin sentin8-cli -- vertical enroll \
+	@cd ../sentin8/sentin8-cli && $(call stamp_env,sentin8-cli) $(CARGO) run --bin sentin8-cli -- vertical enroll \
 		$(patsubst %,../../bank8/bank8-%,$(SERVICES)) \
 		$(patsubst %,../../bank8/bank8-%,$(APPS))
 
