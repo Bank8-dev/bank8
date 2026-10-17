@@ -1,4 +1,4 @@
-# BUSINESS.md: bank8 — Business Requirements & Functionality
+# bank8 — Business Requirements & Functionality
 
 > Audience: product owners, business analysts, and anyone evaluating what the
 > bank8 vertical **does for the business**. For the overview read `README.md`;
