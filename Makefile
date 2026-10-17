@@ -27,7 +27,7 @@ stamp_env = SENTIN8_BUILD_PROFILE=$(if $(RELEASE),release,debug) SENTIN8_GIT_SHA
 SERVICES := ledger payments fdx reporting risk compliance
 APPS := admin eteller efintech ebank
 
-.PHONY: help build build-sdk build-services test status enroll
+.PHONY: help build build-sdk build-services test status enroll start stop
 
 help: ## Show this help
 	@echo "bank8/ vertical group"
@@ -58,3 +58,75 @@ status: ## Per-repo HEADs
 		[ -d "$$d/.git" ] || continue; \
 		printf "%-22s %s\n" "$$d" "$$(git -C $$d log --oneline -1 2>/dev/null | head -c 60)"; \
 	done
+
+# ── Fleet run (STARTSCOPE-1, RS §4.5.2 — the three-level rule) ──────────
+# This group's fleet scope: `make start` boots ONLY the platform base +
+# THIS vertical — the SENTIN8_SERVICES boot pin when captain is down,
+# the idempotent `captain start <types>` API form when it is up. The
+# platform base is the minimal plane a vertical's services call at boot
+# (acme cert mints, auth identity, proxy ingress, bus events, sys
+# registration, bff tokens, web apps); everything else fails open
+# (RS §5.1). The catalog stays the FULL union — other groups join the
+# running fleet via their own group start; `make stop` here stops only
+# this group's instances (the captain and the platform stay up).
+SERVICE_TYPES := $(patsubst %,bank8:%,$(SERVICES))
+PLATFORM_BASE := sentin8:acme,sentin8:auth,sentin8:proxy,sentin8:bus,sentin8:sys,sentin8:bff,sentin8:web
+GROUP_SCOPE := $(PLATFORM_BASE),$(SERVICE_TYPES)
+
+# Tree anchors (RS §4.5.1 discipline): the sibling sentin8-cli, the root
+# .env, ONE absolute tree run dir, and the binary-prefix chain covering
+# this group's + the platform's built target dirs.
+TREE_ROOT := $(abspath ..)
+PLATFORM := $(TREE_ROOT)/sentin8
+CLI_DIR := $(PLATFORM)/sentin8-cli
+ROOT_ENV := $(TREE_ROOT)/.env
+BINARY_DIR = $(if $(RELEASE),release,debug)
+CLI_BIN := $(firstword $(wildcard $(CLI_DIR)/target/$(BINARY_DIR)/sentin8-cli))
+CLI_RUN = $(if $(CLI_BIN),$(CLI_BIN),cargo run --quiet --manifest-path $(CLI_DIR)/Cargo.toml --bin sentin8-cli --)
+SPACE := $(empty) $(empty)
+PREFIX_DIRS := $(wildcard $(PLATFORM)/sentin8-*/target/$(BINARY_DIR)) $(wildcard */target/$(BINARY_DIR))
+PREFIX := $(subst $(SPACE),:,$(strip $(PREFIX_DIRS:%=%)))
+
+define group_rundir
+export SENTIN8_RUN_DIR="$(TREE_ROOT)/.run"; \
+export SENTIN8_LOG_DIR="$(TREE_ROOT)/.run/logs"; \
+export SENTIN8_CAPTAIN_SOCK="$(TREE_ROOT)/.run/captain.sock"
+endef
+
+start: ## Start THIS group: platform base + bank8 (STARTSCOPE-1; captain boots scoped or joins live)
+	@test -f $(ROOT_ENV) || { echo "ERROR: no $(ROOT_ENV) — copy .env.example" >&2; exit 1; }
+	@export SENTIN8_CAPTAIN_BINARY_PREFIX="$(PREFIX)"; \
+	export SENTIN8_PG_POOL_MAX=$${SENTIN8_PG_POOL_MAX:-8}; \
+	set -a; . $(ROOT_ENV); set +a; \
+	$(group_rundir); \
+	if [ -z "$$(docker compose -f $(PLATFORM)/docker-compose.yml ps --status=running -q 2>/dev/null)" ]; then \
+		echo "→ dev infra down — starting PG 18 + Valkey (RS §2.2.1)"; \
+		docker compose -f $(PLATFORM)/docker-compose.yml up -d >/dev/null || exit 1; \
+		for i in $$(seq 1 30); do \
+			n=$$(docker compose -f $(PLATFORM)/docker-compose.yml ps --status=running -q 2>/dev/null | wc -l); \
+			[ "$$n" -ge 2 ] && break; sleep 1; \
+		done; \
+	fi; \
+	if $(CLI_RUN) captain services --no-infra >/dev/null 2>&1; then \
+		echo "→ captain up — starting bank8 via API (idempotent): $(SERVICE_TYPES)"; \
+		$(CLI_RUN) captain start $(SERVICE_TYPES); \
+	else \
+		echo "→ captain down — scoped boot (platform base + bank8, STARTSCOPE-1)"; \
+		export SENTIN8_SERVICES="$(GROUP_SCOPE)"; \
+		$(CLI_RUN) captain start; \
+	fi
+
+stop: ## Stop ONLY this group's instances; captain + platform stay up
+	@set -a; . $(ROOT_ENV); set +a; \
+	$(group_rundir); \
+	if ! $(CLI_RUN) captain services --no-infra >/dev/null 2>&1; then \
+		echo "(captain not running — nothing to stop)"; exit 0; \
+	fi; \
+	keys="$$($(CLI_RUN) captain services --no-infra 2>/dev/null | awk -v types="$(SERVICE_TYPES)" 'BEGIN{split(types,t," "); for(i in t) want[t[i]]=1} want[$$1]{print $$(NF-1)}')"; \
+	if [ -z "$$keys" ]; then echo "(no bank8 instances running)"; exit 0; fi; \
+	for k in $$keys; do \
+		echo "→ stopping $$k"; \
+		$(CLI_RUN) captain stop-instance "$$k" || exit 1; \
+	done
+
+
