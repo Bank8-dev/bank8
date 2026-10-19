@@ -1,9 +1,9 @@
-# bank8 — Business Requirements & Functionality
+# bank8 - Business Requirements & Functionality
 
 > Audience: product owners, business analysts, and anyone evaluating what the
 > bank8 vertical **does for the business**. For the overview read `README.md`;
 > for wire-level detail read `DESIGN.md`. Per-unit BRDs live beside each
-> service and app (`services/*/BUSINESS.md`, `apps/*/BUSINESS.md`) — this
+> service and app (`services/*/BUSINESS.md`, `apps/*/BUSINESS.md`) - this
 > document is the vertical rollup; per-unit docs state the functionality, this
 > one states the business.
 
@@ -11,20 +11,20 @@
 
 ## 1. Business Purpose
 
-- **A complete retail bank on platform rails** — deposit and lending accounts,
+- **A complete retail bank on platform rails** - deposit and lending accounts,
   card issuing, domestic and cross-border payments, and FDX v6.5 open banking
   delivered as one installable vertical, composed entirely on Sentin8
   platform services (identity, events, workflows, scheduling, storage).
-- **Provable money invariants** — double-entry atomicity, idempotent money
+- **Provable money invariants** - double-entry atomicity, idempotent money
   movement, immutable terminal states, and tenant isolation on every row are
   enforced by the platform's data plane, not by app conventions.
-- **Consent-first data sharing** — customer financial data leaves the bank
+- **Consent-first data sharing** - customer financial data leaves the bank
   only under an explicit, revocable consent, with field-level minimization
   applied structurally before serialization.
-- **Delegated counter banking** — branch staff operate on customer accounts
+- **Delegated counter banking** - branch staff operate on customer accounts
   through customer-approved, time-boxed, audited delegation instead of
   credential sharing.
-- **Zero per-vertical infrastructure** — the vertical ships banking logic
+- **Zero per-vertical infrastructure** - the vertical ships banking logic
   only; every cross-cutting concern is inherited from the platform, so a new
   tenant gets the full stack by enabling three services in an environment.
 
@@ -35,9 +35,9 @@
 | 1 | Core banking | Customer registry; customer + internal accounts; 13 product types as configurable data; double-entry postings; 3-D balances; scheduled jobs; statements; checksum-chained journal | Bank8:Ledger |
 | 2 | Payment orchestration | Instructions, scheme flows (B8 on-us, SEPA, TIPS, SWIFT AGI on ISO 20022), card issuing/lifecycle/3DS, mandates, payees, routing catalogue, versioned rules, payment files, manual decisions, recurring payments, sandbox simulators | Bank8:Payments |
 | 3 | Open banking | FDX v6.5 provider APIs, consent lifecycle + enforcement, CSDF data minimization, recipient registration (DDCR/DDPM), HMAC-signed notifications, certification metrics | Bank8:FDX |
-| 4 | Regulatory reporting | Jurisdiction registry as runtime data; filing calendar; return generation + XBRL/CSV packaging; submission/amendment lifecycle; AML/CTF filing (STR/SAR/CTR/EFTR/LCTR) — the vertical's single filing executor | Bank8:Reporting |
+| 4 | Regulatory reporting | Jurisdiction registry as runtime data; filing calendar; return generation + XBRL/CSV packaging; submission/amendment lifecycle; AML/CTF filing (STR/SAR/CTR/EFTR/LCTR) - the vertical's single filing executor | Bank8:Reporting |
 | 5 | Prudential risk | Continuous exposure measurement from posting/payment events; Basel capital, LCR/NSFR liquidity, IFRS 9 ECL staging; limit monitoring with breach events; declarative stress scenarios | Bank8:Risk |
-| 6 | AML/CTF compliance | KYC/CDD, beneficial ownership, PEP determination, customer risk rating; real-time sanctions screening + transaction monitoring; alert/case lifecycle — detection only, filing via Reporting | Bank8:Compliance |
+| 6 | AML/CTF compliance | KYC/CDD, beneficial ownership, PEP determination, customer risk rating; real-time sanctions screening + transaction monitoring; alert/case lifecycle - detection only, filing via Reporting | Bank8:Compliance |
 | 7 | Customer banking app | Sign-up/sign-in, account opening, balances/transactions, transfers, statements, notifications, consent review/revocation | apps/ebank |
 | 8 | FDX recipient app | Provider discovery, consent journeys, consented account/transaction data | apps/efintech |
 | 9 | Branch teller terminal | Customer search/onboarding, CIBA-delegated counter operations (cash/cheque deposits, withdrawals, transfers), receipts, ops cockpit (batches, DLQ, decisions, tasks) | apps/eteller |
@@ -69,20 +69,20 @@
 | Customers | Every banking customer is registered with at most one platform identity linkage. |
 | Accounts | A customer account must reference an active product and a customer; internal accounts belong to the bank's own `institution` customer and are invisible to bank customers. |
 | Product factory | Products are data: typed parameter sets compose validation modules; parameters resolve global → product → account; launching/changing products needs no engineering. |
-| Postings | A posting batch must net to zero per denomination or it is rejected before anything is written; every movement is idempotent; original postings are never mutated — corrections are adjustments. |
+| Postings | A posting batch must net to zero per denomination or it is rejected before anything is written; every movement is idempotent; original postings are never mutated - corrections are adjustments. |
 | Balances | Three-dimensional balances (denomination, address, phase) with end-of-day history; concurrent postings serialize on the balance row. |
 | Time-driven movement | Schedules generate posting batches through the same engine; Cron owns timing, the ledger owns correctness (schedule retries are idempotent per schedule+date). |
 | Statements | Statement documents are generated per account/period into Storage and regenerate idempotently on demand. |
 | Trail | Every change lands in a checksum-chained, replayable journal plus a fail-closed audit trail. |
 | Bulk & control | Account migrations/update batches with per-item retry; processing groups pause/resume batch windows. |
-| Seeded plumbing | Internal counterparty accounts (interest, fee, penalty, teller cash/cheque/clearing/suspense) are seeded per denomination when the ledger is enabled — every booked amount has a real counterparty account. |
+| Seeded plumbing | Internal counterparty accounts (interest, fee, penalty, teller cash/cheque/clearing/suspense) are seeded per denomination when the ledger is enabled - every booked amount has a real counterparty account. |
 
 ### 3.2 Payment orchestration (Bank8:Payments)
 
 | Capability | Business rule |
 |---|---|
 | Instructions | Every instruction is idempotent and guarded by a state machine: `pending → processing → completed/failed/cancelled`, with `waiting` for manual decisions and async scheme callbacks; terminal states never regress. |
-| Scheme flows | B8 on-us, SEPA, TIPS and SWIFT AGI run over a typed ISO 20022 catalogue with UETR tracking and ISO 8583 decline mapping; every money movement is posted through Bank8:Ledger's public API — payments never balance directly. |
+| Scheme flows | B8 on-us, SEPA, TIPS and SWIFT AGI run over a typed ISO 20022 catalogue with UETR tracking and ISO 8583 decline mapping; every money movement is posted through Bank8:Ledger's public API - payments never balance directly. |
 | Cards | Card issuing, 5-state lifecycle, PIN management, velocity controls, and 3-D Secure run as first-class business objects. |
 | Mandates & payees | pain.009 mandates and the payee registry bind payment initiation to approved counterparties and amount limits. |
 | Rules & routing | Versioned rule-set drafts never execute until published; the routing catalogue binds instruments to routes and rules. |
@@ -95,12 +95,12 @@
 
 | Capability | Business rule |
 |---|---|
-| Consent control | No consent, no data: every provider route passes consent middleware (valid, unexpired, scope-covered) on top of RLS — a route cannot bypass it; revocation stops serving on the very next call. |
+| Consent control | No consent, no data: every provider route passes consent middleware (valid, unexpired, scope-covered) on top of RLS - a route cannot bypass it; revocation stops serving on the very next call. |
 | Consent lifecycle | `ACTIVE → REVOKED` (reason + initiator recorded) or `ACTIVE → EXPIRED` via the consent's duration window (`ONE_TIME` / `PERSISTENT` / `TIME_BOUND` + lookback); expiry is introspection-driven, never cached. |
 | Data minimization | Responses are projected to the granted CSDF clusters before serialization, narrowed by scope, product category, and requested fields; unknown scopes grant nothing. |
 | Recipient onboarding | External recipients register dynamically (RFC 7591/7592 DCR proxy) with DPoP sender-constrained tokens; no static recipient list exists. |
 | Data serving | Consented accounts, transactions, statements, and customer info are served through `/fdx/v6/*`; unimplemented FDX families (rewards, tax forms, investments) return the standard FDX unsupported response. |
-| Money movement | Recipient-initiated transfers/payments are consent-checked by FDX and executed by Bank8:Payments — one executor for money movement. |
+| Money movement | Recipient-initiated transfers/payments are consent-checked by FDX and executed by Bank8:Payments - one executor for money movement. |
 | Notifications | Delivery pushes HMAC-signed webhook notifications per subscription with retry backoff; exhausted deliveries are marked failed for admin triage, never silently dropped. |
 | Certification | `/fdx/v6/certification-metrics` derives data-call and consent-transition evidence from audited traffic for FDX certification review. |
 
@@ -120,47 +120,47 @@ platform trigger (event naming: `bank8:{service}:{resource}:{operation}`):
 
 | Family | Producer | Volume | Business meaning |
 |---|---|---|---|
-| `bank8:ledger:*` | Bank8:Ledger | 30 resource types | every account/product/posting/schedule/adjustment lifecycle change — downstream recon, statement triggers, AI fraud-scan hook |
-| `bank8:payments:*` | Bank8:Payments | 25 resource types (+ specific flows: retried/cancelled/repaired/wasm-migrated) | instruction lifecycle, card/cardholder lifecycle, rules publishing, files, decisions — drive the embedded re-drive worker and downstream consumers |
-| `bank8:fdx:*` | Bank8:FDX | 16 resource types | consent granted/revoked/expired, recipient registrations, PIP parties, notification subscriptions — drive recipient-side reconciliation |
+| `bank8:ledger:*` | Bank8:Ledger | 30 resource types | every account/product/posting/schedule/adjustment lifecycle change - downstream recon, statement triggers, AI fraud-scan hook |
+| `bank8:payments:*` | Bank8:Payments | 25 resource types (+ specific flows: retried/cancelled/repaired/wasm-migrated) | instruction lifecycle, card/cardholder lifecycle, rules publishing, files, decisions - drive the embedded re-drive worker and downstream consumers |
+| `bank8:fdx:*` | Bank8:FDX | 16 resource types | consent granted/revoked/expired, recipient registrations, PIP parties, notification subscriptions - drive recipient-side reconciliation |
 
 **Inbound (consumed):**
 
 | Event | Consumer | Reaction |
 |---|---|---|
-| `sentin8:sys:service:updated {enabled}` | ledger + fdx env-init consumers | idempotent per-tenant seeding — internal counterparty accounts; provider profile + recipient-client registration |
+| `sentin8:sys:service:updated {enabled}` | ledger + fdx env-init consumers | idempotent per-tenant seeding - internal counterparty accounts; provider profile + recipient-client registration |
 | `bank8:payments:instruction:*` | payments embedded worker | guarded re-drive of stalled/failed instructions via Flow |
 | `bank8:payments:instruction:completed` | ledger trigger (registered) | posting callback reconciliation |
 
 ## 5. Business Rules & Invariants
 
-1. **Books never drift** — a posting batch that does not balance per
+1. **Books never drift** - a posting batch that does not balance per
    denomination is rejected before any row is written.
-2. **Money movement has one executor** — all movement, from app transfers to
+2. **Money movement has one executor** - all movement, from app transfers to
    FDX-initiated payments, realizes as Bank8:Ledger postings via the public
    API; no service ever writes another's balances or tables.
-3. **Retries are safe by construction** — posting/instruction idempotency keys
+3. **Retries are safe by construction** - posting/instruction idempotency keys
    are unique per tenant; teller retries, FDX money movement replays, and
    schedule re-runs can never double-post.
-4. **Terminal states are final** — completed/cancelled/revoked/closed states
+4. **Terminal states are final** - completed/cancelled/revoked/closed states
    never regress; every state transition is a guarded update.
-5. **No consent, no data** — external data access exists only inside an
+5. **No consent, no data** - external data access exists only inside an
    explicit customer consent; revocation takes effect immediately.
-6. **Minimization is structural** — only CSDF-granted clusters are ever
+6. **Minimization is structural** - only CSDF-granted clusters are ever
    serialized; scope, product category, and requested fields can only narrow.
-7. **The teller never holds customer credentials** — counter operations ride
+7. **The teller never holds customer credentials** - counter operations ride
    customer-approved, time-boxed delegation, attributable to the teller.
-8. **The bank's plumbing is not the customer's business** — internal accounts
+8. **The bank's plumbing is not the customer's business** - internal accounts
    are seeded, owned by the institution customer, and visible only to staff
    surfaces.
-9. **Every row is tenant-isolated** — FORCE-RLS on `env_id` across all 114
+9. **Every row is tenant-isolated** - FORCE-RLS on `env_id` across all 114
    domain tables, with holder-scoping on customer-held records.
-10. **Money is exact** — `rust_decimal` end to end; the JSON wire format is a
+10. **Money is exact** - `rust_decimal` end to end; the JSON wire format is a
     decimal string.
-11. **Secrets are referenced, never stored** — provider tokens, recipient
+11. **Secrets are referenced, never stored** - provider tokens, recipient
     keys, and notification secrets live as secret references (including the
     sealed DPoP key reference).
-12. **Drafts never execute** — unpublished rule versions cannot affect
+12. **Drafts never execute** - unpublished rule versions cannot affect
     payment outcomes; simulators are explicit, production-parity paths.
 
 ## 6. Target-User Roles & Use Cases
@@ -211,7 +211,7 @@ platform trigger (event naming: `bank8:{service}:{resource}:{operation}`):
 ## 9. Acceptance Criteria
 
 1. A tenant environment can be brought from zero to full banking by enabling
-   the three services — internal accounts, provider profile, and recipient
+   the three services - internal accounts, provider profile, and recipient
    registration self-seed from the platform's service-updated event.
 2. A customer can open a product and transfer money in the eBank app; a
    retried transfer never double-posts.
@@ -236,16 +236,16 @@ platform trigger (event naming: `bank8:{service}:{resource}:{operation}`):
 ## 10. Open Business Questions
 
 - **Live scheme certification** (Visa DPS/MDES, SWIFT AGI) is tenant-driven
-  by design — the vertical ships the runbook and simulators; when does a
+  by design - the vertical ships the runbook and simulators; when does a
   tenant need production scheme accreditation to go live?
 - **Recurring payments** operate behind the `v1beta` surface until the
-  recurring E2E spec is exercised — what is the promotion bar?
+  recurring E2E spec is exercised - what is the promotion bar?
 - **eTeller page set 2** (card management, payment instructions, file
   upload, simulator, mandates, standing orders, closure/freeze) extends the
-  counter surface — where does counter scope end and admin-console scope
+  counter surface - where does counter scope end and admin-console scope
   begin? (BACKLOG ETA-5)
 - **FDX certification daily-rollup table + evidence admin page** are deferred
-  until poll-volume scale demands them — what review volume triggers the
+  until poll-volume scale demands them - what review volume triggers the
   build? (fdx DESIGN.md §10)
 
 ---

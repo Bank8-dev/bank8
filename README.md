@@ -1,7 +1,7 @@
-# bank8 — Finance Vertical
+# bank8 - Finance Vertical
 
 Banking, payments, and open banking: a vertical domain composed on the
-Sentin8 platform — a core ledger with double-entry postings, payment
+Sentin8 platform - a core ledger with double-entry postings, payment
 orchestration over ISO 20022 schemes and cards, FDX v6.5 open-banking
 data exchange, and the customer/staff Flutter apps that use them.
 
@@ -12,7 +12,7 @@ services (ledger, payments, fdx, reporting, risk, compliance) that own
 the bank8 PostgreSQL database, four contract crates, a unified Rust SDK
 facade,
 and four Flutter apps. It contains no platform infrastructure of its
-own — identity, bus, storage, scheduling, workflows, and supervision
+own - identity, bus, storage, scheduling, workflows, and supervision
 are consumed from the Sentin8 platform services.
 
 ## 2. Motivation
@@ -92,9 +92,9 @@ graph TD
 | `services/ledger` | Rust service | Core ledger: accounts, products, postings, balances, schedules, config library (91 endpoints, 44 tables) | `services/ledger/{README,DESIGN,BUSINESS}.md` |
 | `services/payments` | Rust service | Payment orchestration: instructions, scheme flows, cards, mandates, rules + the embedded async re-drive worker (90 endpoints, 55 tables) | `services/payments/{README,DESIGN,BUSINESS}.md` |
 | `services/fdx` | Rust service | FDX v6.5 open banking: consent-checked data sharing, notifications (71 routes, 15 tables) | `services/fdx/{README,DESIGN,BUSINESS}.md` |
-| `services/reporting` | Rust service | Regulatory reporting: jurisdiction registry, filing calendar, generation/packaging (XBRL/CSV), submission/amendment, AML/CTF filing — the vertical's single filing executor | `services/reporting/{README,DESIGN,BUSINESS}.md` |
+| `services/reporting` | Rust service | Regulatory reporting: jurisdiction registry, filing calendar, generation/packaging (XBRL/CSV), submission/amendment, AML/CTF filing - the vertical's single filing executor | `services/reporting/{README,DESIGN,BUSINESS}.md` |
 | `services/risk` | Rust service | Prudential risk: exposures, capital (Basel), liquidity (LCR/NSFR), IFRS 9 ECL, limit monitoring with breach events, stress scenarios | `services/risk/{README,DESIGN,BUSINESS}.md` |
-| `services/compliance` | Rust service | AML/CTF: KYC/CDD, beneficial ownership, PEP, sanctions screening, transaction monitoring, alert/case lifecycle — detection only, filing via Reporting | `services/compliance/{README,DESIGN,BUSINESS}.md` |
+| `services/compliance` | Rust service | AML/CTF: KYC/CDD, beneficial ownership, PEP, sanctions screening, transaction monitoring, alert/case lifecycle - detection only, filing via Reporting | `services/compliance/{README,DESIGN,BUSINESS}.md` |
 | `crates/{ledger,payments,fdx,regulatory}/contracts` | Rust crates | Wire-type DTOs shared by services and SDK | `crates/*/contracts/README.md` |
 | `sdk/rust/bank8` | Rust facade | Unified namespace facade: typed clients + contracts | `sdk/rust/bank8/README.md` |
 | `apps/{ebank,efintech,eteller,admin}` | Flutter apps | Customer and staff experiences | `apps/*/{README,DESIGN,BUSINESS}.md` |
@@ -104,26 +104,26 @@ graph TD
 
 ## 5. Key Traits and Data Structures
 
-- **Namespace facade** — every crate imports as `bank8::{service}::{…}`
+- **Namespace facade** - every crate imports as `bank8::{service}::{…}`
   (`bank8::ledger::contracts::Account`); the vertical consumes the
   platform only through `sentin8::*` (principles §2.1).
-- **Double-entry ledger** — posting batches are balance-validated per
+- **Double-entry ledger** - posting batches are balance-validated per
   denomination before any write; balances/instructions/transactions +
   audit + outbox commit atomically.
-- **Consent authority** — FDX: every provider data call passes the
+- **Consent authority** - FDX: every provider data call passes the
   consent middleware (valid, unexpired, scope-covered) plus CSDF
   minimization.
-- **Event vocabulary** — `bank8:{service}:{resource}:{operation}` over
+- **Event vocabulary** - `bank8:{service}:{resource}:{operation}` over
   the DBX producer path (local `{leaf}.outbox` → shell relay → Bus
   `POST /v1/produce`).
-- **Scope vocabulary** — `bank8:{service}:{resource}:{action}`,
+- **Scope vocabulary** - `bank8:{service}:{resource}:{action}`,
   runtime-registered via `vertical enroll` from each service's
   `--print-registration`.
 
 ## 6. Rationale, Trade-offs, and Alternatives
 
 - **Vertical owns domain only**: identity/event fabric/storage are
-  platform services — the vertical never re-implements them
+  platform services - the vertical never re-implements them
   (zero compile-time vertical knowledge flows the other way, too:
   principles §4.14).
 - **Database-per-vertical, schema-per-service**: each service owns its
@@ -134,7 +134,7 @@ graph TD
 - **Delegation over embedding**: scheduling → Sentin8:Cron, hooks →
   Sentin8:Func, orchestration → Sentin8:Flow; the services implement
   only proxy-back handlers.
-- **Rejected: a monolithic "banking" service** — the
+- **Rejected: a monolithic "banking" service** - the
   ledger/payments/fdx split keeps money movement (ledger) separate
   from orchestration (payments) and data sharing (fdx), each with its
   own scopes, tables, and event families.
@@ -145,7 +145,7 @@ graph TD
   holder scoping (`sentin8:holder:view-all` is M2M-only).
 - Money is `rust_decimal` end-to-end; JSON wire format is a string.
 - Terminal states never regress (guarded updates everywhere).
-- M2M identity is the workload certificate (auth DESIGN §4.3f) — a
+- M2M identity is the workload certificate (auth DESIGN §4.3f) - a
   stolen token is nothing; without the private key the handshake fails.
 
 ## 8. Development
@@ -174,7 +174,7 @@ and `vertical enroll` registers services/scopes/triggers/apps (both via
   open items; the root `BACKLOG.md` is the live story list (open stories
   only: identity-invalidation relay, FDX tenant-context discipline
   completion, worker stream env binding, schema-per-service consolidation
-  — §3 of the top-level `DESIGN.md` reflects the landed schema state).
+  - §3 of the top-level `DESIGN.md` reflects the landed schema state).
   Items closed as decisions (certification external by design, cache scopes,
   colon-form canonical) live in the design docs, not the backlog.
 
