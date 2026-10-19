@@ -48,6 +48,13 @@ test: ## Run the SDK facade tests + per-service suites
 	@cd bank8-sdk && $(call stamp_env,bank8-sdk) $(CARGO) test
 	@for s in $(SERVICES); do (cd bank8-$$s && $(call stamp_env,bank8-$$s) $(CARGO) test) || true; done
 
+test-openapi: ## Run every bank8 drift-guard test (OAPEC §4.8 — router↔spec sweep)
+	@for d in bank8-*/; do \
+		[ -f "$$d/tests/openapi_drift.rs" ] || continue; \
+		echo "==> drift-guard: $$d"; \
+		(cd $$d && $(call stamp_env,$(basename $$d)) $(CARGO) test --test openapi_drift) || exit 1; \
+	done
+
 enroll: ## Enroll every bank8 repo (composable registration, RS §6)
 	@cd ../sentin8/sentin8-cli && $(call stamp_env,sentin8-cli) $(CARGO) run --bin sentin8-cli -- vertical enroll \
 		$(patsubst %,../../bank8/bank8-%,$(SERVICES)) \
