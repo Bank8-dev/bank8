@@ -55,8 +55,17 @@ test-openapi: ## Run every bank8 drift-guard test (OAPEC §4.8 — router↔spec
 		(cd $$d && $(call stamp_env,$(basename $$d)) $(CARGO) test --test openapi_drift) || exit 1; \
 	done
 
+# The prefix export rides the SAME shell line as the CLI command (see
+# stamp_env — make runs each recipe line in its own shell). It must be
+# explicit here: composable enroll (RS §6) merges this group's repo
+# fragments into a temp aggregate in /tmp, so the CLI's own vertical-root
+# fallback (target/release under the registry's parent dir) can never see
+# this group's dev builds — binary resolution depends entirely on
+# SENTIN8_CAPTAIN_BINARY_PREFIX. This export also overrides any ambient
+# mis-set variable (a bare repo ROOT dir contains no binary files).
 enroll: ## Enroll every bank8 repo (composable registration, RS §6)
-	@cd ../sentin8/sentin8-cli && $(call stamp_env,sentin8-cli) $(CARGO) run --bin sentin8-cli -- vertical enroll \
+	@export SENTIN8_CAPTAIN_BINARY_PREFIX="$(PREFIX)"; \
+	cd ../sentin8/sentin8-cli && $(call stamp_env,sentin8-cli) $(CARGO) run --bin sentin8-cli -- vertical enroll \
 		$(patsubst %,../../bank8/bank8-%,$(SERVICES)) \
 		$(patsubst %,../../bank8/bank8-%,$(APPS))
 
@@ -82,7 +91,10 @@ GROUP_SCOPE := $(PLATFORM_BASE),$(SERVICE_TYPES)
 
 # Tree anchors (RS §4.5.1 discipline): the sibling sentin8-cli, the root
 # .env, ONE absolute tree run dir, and the binary-prefix chain covering
-# this group's + the platform's built target dirs.
+# this group's + the platform's built target dirs. Entries are ABSOLUTE —
+# `vertical enroll` runs the CLI from ../sentin8/sentin8-cli, where a
+# relative `bank8-*/target/debug` entry would resolve against the CLI's
+# own cwd and miss.
 TREE_ROOT := $(abspath ..)
 PLATFORM := $(TREE_ROOT)/sentin8
 CLI_DIR := $(PLATFORM)/sentin8-cli
@@ -91,7 +103,7 @@ BINARY_DIR = $(if $(RELEASE),release,debug)
 CLI_BIN := $(firstword $(wildcard $(CLI_DIR)/target/$(BINARY_DIR)/sentin8-cli))
 CLI_RUN = $(if $(CLI_BIN),$(CLI_BIN),cargo run --quiet --manifest-path $(CLI_DIR)/Cargo.toml --bin sentin8-cli --)
 SPACE := $(empty) $(empty)
-PREFIX_DIRS := $(wildcard $(PLATFORM)/sentin8-*/target/$(BINARY_DIR)) $(wildcard */target/$(BINARY_DIR))
+PREFIX_DIRS := $(wildcard $(PLATFORM)/sentin8-*/target/$(BINARY_DIR)) $(abspath $(wildcard */target/$(BINARY_DIR)))
 PREFIX := $(subst $(SPACE),:,$(strip $(PREFIX_DIRS:%=%)))
 
 define group_rundir
