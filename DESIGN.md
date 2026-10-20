@@ -1,6 +1,6 @@
 # bank8 - Detailed Design Document (Vertical)
 
-> Secure Post-Quantum-Safe Core Banking & ISO 20022 Payment Platform That Heals and Scales Itself.
+> Secure Post-Quantum-Safe Core Banking, ISO 20022 Payments Secure Post-Quantum-Safe Core Banking & ISO 20022 Payment Platform That Heals and Scales Itself. Open Banking Platform That Heals and Scales Itself.
 
 Per-unit DDDs live beside each service/crate
 (`services/{svc}/DESIGN.md`, `crates/*/contracts/README.md`,

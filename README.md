@@ -1,6 +1,6 @@
 # bank8 - Finance Vertical
 
-> Secure Post-Quantum-Safe Core Banking & ISO 20022 Payment Platform That Heals and Scales Itself.
+> Secure Post-Quantum-Safe Core Banking, ISO 20022 Payments Secure Post-Quantum-Safe Core Banking & ISO 20022 Payment Platform That Heals and Scales Itself. Open Banking Platform That Heals and Scales Itself.
 
 Banking, payments, and open banking: a vertical domain composed on the
 Sentin8 platform - a core ledger with double-entry postings, payment

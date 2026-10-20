@@ -1,6 +1,6 @@
 # bank8 - Business Requirements & Functionality
 
-> Secure Post-Quantum-Safe Core Banking & ISO 20022 Payment Platform That Heals and Scales Itself.
+> Secure Post-Quantum-Safe Core Banking, ISO 20022 Payments Secure Post-Quantum-Safe Core Banking & ISO 20022 Payment Platform That Heals and Scales Itself. Open Banking Platform That Heals and Scales Itself.
 
 > Audience: product owners, business analysts, and anyone evaluating what the
 > bank8 vertical **does for the business**. For the overview read `README.md`;
