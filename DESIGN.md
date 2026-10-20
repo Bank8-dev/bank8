@@ -1,5 +1,7 @@
 # bank8 - Detailed Design Document (Vertical)
 
+> Secure Post-Quantum-Safe Core Banking & ISO 20022 Payment Platform That Heals and Scales Itself.
+
 Per-unit DDDs live beside each service/crate
 (`services/{svc}/DESIGN.md`, `crates/*/contracts/README.md`,
 `sdk/rust/bank8/README.md`). This document covers what is only visible
