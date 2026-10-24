@@ -2,6 +2,11 @@
 
 > Secure Post-Quantum-Safe Core Banking, ISO 20022 Payments Secure Post-Quantum-Safe Core Banking & ISO 20022 Payment Platform That Heals and Scales Itself. Open Banking Platform That Heals and Scales Itself.
 
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
+[![Built with Rust](https://img.shields.io/badge/Built%20with-Rust-orange.svg)](https://www.rust-lang.org/)
+[![Docs](https://img.shields.io/badge/docs-read-3aa757.svg)](https://bank8.dev/docs/products/ledger)
+[![Website](https://img.shields.io/badge/website-bank8.dev-1a73e8.svg)](https://bank8.dev)
+
 Banking, payments, and open banking: a vertical domain composed on the
 Sentin8 platform - a core ledger with double-entry postings, payment
 orchestration over ISO 20022 schemes and cards, FDX v6.5 open-banking
