@@ -41,7 +41,7 @@ pipeline and audit posture.
 | `DESIGN.md` | Maintainers / architects | Vertical-level DDD: cross-service flows, vertical database, deployment lifecycle, registration contract |
 | `BUSINESS.md` | Product owners / analysts | The business rollup: capabilities, rules, personas, KPIs, acceptance criteria |
 | `services/*/README.md` · `DESIGN.md` · `BUSINESS.md` | Per-service | Overview, wire-level DDD, per-service BRD (ledger · payments · fdx) |
-| `apps/*/README.md` · `DESIGN.md` · `BUSINESS.md` | Per-app | Overview, app DDD (bootstrap/proxy/routing), app BRD (ebank · efintech · eteller · admin) |
+| `apps/*/README.md` · `DESIGN.md` · `BUSINESS.md` | Per-app | Overview, app DDD (bootstrap/proxy/routing), app BRD (ebank · eteller · admin; the recipient app eOpenCA lives in the openfin8 vertical) |
 | `crates/*/contracts/README.md`, `sdk/rust/bank8/README.md` | Integrators | Contract crates and the SDK facade |
 | `BACKLOG.md` | Planning | The live story list (open only) |
 | `vertical-registry.json`, `services/catalog.json` | Tooling | Declarative registration consumed by `sentin8-cli vertical enroll` |
@@ -52,7 +52,6 @@ pipeline and audit posture.
 graph TD
     subgraph apps["Flutter apps (user-facing)"]
         EB["ebank<br/>(customer)"]
-        EF["efintech<br/>(customer, FDX recipient)"]
         ET["eteller<br/>(staff terminal)"]
         AD["admin<br/>(staff dashboard)"]
     end
@@ -104,7 +103,7 @@ graph TD
 | `services/compliance` | Rust service | AML/CTF: KYC/CDD, beneficial ownership, PEP, sanctions screening, transaction monitoring, alert/case lifecycle - detection only, filing via Reporting | `services/compliance/{README,DESIGN,BUSINESS}.md` |
 | `crates/{ledger,payments,fdx,regulatory}/contracts` | Rust crates | Wire-type DTOs shared by services and SDK | `crates/*/contracts/README.md` |
 | `sdk/rust/bank8` | Rust facade | Unified namespace facade: typed clients + contracts | `sdk/rust/bank8/README.md` |
-| `apps/{ebank,efintech,eteller,admin}` | Flutter apps | Customer and staff experiences | `apps/*/{README,DESIGN,BUSINESS}.md` |
+| `apps/{ebank,eteller,admin}` | Flutter apps | Customer and staff experiences | `apps/*/{README,DESIGN,BUSINESS}.md` |
 | `bank8-e2e` | Playwright | UI-only end-to-end suite through the BFF proxy | `bank8-e2e/README.md` |
 | `bank8-site` | Website | The public website at bank8.dev (Docusaurus on `@sentin8/site-engine`; product/app/SDK pages + harvested reference) |
 | `packaging/debian` | Packaging | The `bank8` .deb for install-based distribution | `packaging/README.md` |

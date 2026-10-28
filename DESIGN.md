@@ -183,7 +183,7 @@ service (see each DESIGN.md §4). The vertical's external contract is:
 | Ledger API | `/proxy/ledger/v1/*` | ebank, eteller, admin, fdx (internal), payments (posting steps) |
 | Payments API | `/proxy/payments/v1/*` (+`v1beta`) | ebank, eteller, admin |
 | FDX provider API | `/fdx/v6/*` | external data recipients |
-| FDX recipient/consent | `/proxy/fdx/v1/*`, `/v1/recipient/*`, `/v1/auth/consent/*` | efintech, auth-ui consent host |
+| FDX recipient/consent | `/proxy/fdx/v1/*`, `/v1/recipient/*`, `/v1/auth/consent/*` | openfin8-eopenca (recipient app), auth-ui consent host |
 
 **Event families** (the vertical's complete Bus surface):
 

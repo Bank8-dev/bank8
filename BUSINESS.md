@@ -41,7 +41,7 @@
 | 5 | Prudential risk | Continuous exposure measurement from posting/payment events; Basel capital, LCR/NSFR liquidity, IFRS 9 ECL staging; limit monitoring with breach events; declarative stress scenarios | Bank8:Risk |
 | 6 | AML/CTF compliance | KYC/CDD, beneficial ownership, PEP determination, customer risk rating; real-time sanctions screening + transaction monitoring; alert/case lifecycle - detection only, filing via Reporting | Bank8:Compliance |
 | 7 | Customer banking app | Sign-up/sign-in, account opening, balances/transactions, transfers, statements, notifications, consent review/revocation | apps/ebank |
-| 8 | FDX recipient app | Provider discovery, consent journeys, consented account/transaction data | apps/efintech |
+| 8 | FDX recipient app | Provider discovery, consent journeys, consented account/transaction data - **moved to the openfin8 vertical as eOpenCA** (openfin8-eopenca) | — |
 | 9 | Branch teller terminal | Customer search/onboarding, CIBA-delegated counter operations (cash/cheque deposits, withdrawals, transfers), receipts, ops cockpit (batches, DLQ, decisions, tasks) | apps/eteller |
 | 10 | Vertical admin console | Single staff console rendering the services' RFW admin pages; service health + per-environment service enablement | apps/admin |
 | 11 | Shared contracts & SDK | Typed wire DTOs and a unified Rust SDK facade (`bank8::{service}`) for internal and third-party integrators | crates/*/contracts, sdk/rust/bank8 |
@@ -111,7 +111,6 @@
 | App | Persona | Capability rules |
 |---|---|---|
 | ebank | Retail customer | Self-service onboarding, account opening (13 product types), transfers (idempotent by construction), statements via signed URLs, consent view/revoke; no credential ever reaches the client. |
-| efintech | Fintech customer (recipient) | Discovers published providers, starts consent journeys (hosted approval), consumes only consent-scoped data; revocation removes data on the next refresh. |
 | eteller | Branch teller | Customer search/onboarding run on the staff token; all customer operations ride customer-approved CIBA delegation (`act` = teller), time-boxed and audited; internal accounts resolve staff-only. |
 | admin | Bank staff | One console for the whole vertical: services' RFW admin pages, service health, per-environment service enablement; every mutation admin-scoped and audited upstream. |
 
@@ -170,7 +169,7 @@ platform trigger (event naming: `bank8:{service}:{resource}:{operation}`):
 | Persona | What they do with the vertical |
 |---|---|
 | Retail customer | Banks end-to-end from the eBank app: sign-up, open products, monitor balances/transactions, transfer, download statements, grant/revoke FDX sharing. |
-| Fintech customer | Uses the eFintech app to discover the bank as a provider, consent, and view consented account/transaction data. |
+| Fintech customer | Uses the recipient app (eOpenCA, openfin8 vertical) to discover the bank as a provider, consent, and view consented account/transaction data. |
 | Branch teller | Serves walk-in customers from eTeller: onboarding, customer-approved counter operations, receipts. |
 | Branch operations staff | Administers batches, DLQ replay, manual decisions, approval tasks from the admin console. |
 | Bank administrator | Manages products, FDX provider profile, recipient registrations, service enablement, and monitors health from the admin console. |
