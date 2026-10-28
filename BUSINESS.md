@@ -36,7 +36,7 @@
 |---|---|---|---|
 | 1 | Core banking | Customer registry; customer + internal accounts; 13 product types as configurable data; double-entry postings; 3-D balances; scheduled jobs; statements; checksum-chained journal | Bank8:Ledger |
 | 2 | Payment orchestration | Instructions, scheme flows (B8 on-us, SEPA, TIPS, SWIFT AGI on ISO 20022), card issuing/lifecycle/3DS, mandates, payees, routing catalogue, versioned rules, payment files, manual decisions, recurring payments, sandbox simulators | Bank8:Payments |
-| 3 | Open banking | FDX v6.5 provider APIs, consent lifecycle + enforcement, CSDF data minimization, recipient registration (DDCR/DDPM), HMAC-signed notifications, certification metrics | Bank8:FDX |
+| 3 | Open banking | FDX v6.5 provider APIs, consent lifecycle + enforcement, CSDF data minimization, recipient registration (DDCR/DDPM), HMAC-signed notifications, certification metrics | OpenFin8:CA |
 | 4 | Regulatory reporting | Jurisdiction registry as runtime data; filing calendar; return generation + XBRL/CSV packaging; submission/amendment lifecycle; AML/CTF filing (STR/SAR/CTR/EFTR/LCTR) - the vertical's single filing executor | Bank8:Reporting |
 | 5 | Prudential risk | Continuous exposure measurement from posting/payment events; Basel capital, LCR/NSFR liquidity, IFRS 9 ECL staging; limit monitoring with breach events; declarative stress scenarios | Bank8:Risk |
 | 6 | AML/CTF compliance | KYC/CDD, beneficial ownership, PEP determination, customer risk rating; real-time sanctions screening + transaction monitoring; alert/case lifecycle - detection only, filing via Reporting | Bank8:Compliance |
@@ -93,7 +93,7 @@
 | Recurring | Recurring/scheduled payments register with Sentin8:Cron; timing is platform-owned, execution re-enters the same instruction pipeline. |
 | Sandbox | Scheme simulators (cards, credit transfers, FedNow, SWIFT AGI) exercise production-parity paths for integration testing without live schemes. |
 
-### 3.3 Open banking (Bank8:FDX)
+### 3.3 Open banking (OpenFin8:CA)
 
 | Capability | Business rule |
 |---|---|
@@ -124,7 +124,7 @@ platform trigger (event naming: `bank8:{service}:{resource}:{operation}`):
 |---|---|---|---|
 | `bank8:ledger:*` | Bank8:Ledger | 30 resource types | every account/product/posting/schedule/adjustment lifecycle change - downstream recon, statement triggers, AI fraud-scan hook |
 | `bank8:payments:*` | Bank8:Payments | 25 resource types (+ specific flows: retried/cancelled/repaired/wasm-migrated) | instruction lifecycle, card/cardholder lifecycle, rules publishing, files, decisions - drive the embedded re-drive worker and downstream consumers |
-| `bank8:fdx:*` | Bank8:FDX | 16 resource types | consent granted/revoked/expired, recipient registrations, PIP parties, notification subscriptions - drive recipient-side reconciliation |
+| `bank8:open-ca:*` | OpenFin8:CA | 16 resource types | consent granted/revoked/expired, recipient registrations, PIP parties, notification subscriptions - drive recipient-side reconciliation |
 
 **Inbound (consumed):**
 

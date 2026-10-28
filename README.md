@@ -69,7 +69,7 @@ graph TD
     subgraph vertical["bank8 vertical"]
         LEDGER["Bank8:Ledger<br/>(core ledger)"]
         PAY["Bank8:Payments<br/>(orchestration + embedded re-drive worker)"]
-        FDX["Bank8:FDX<br/>(open banking)"]
+        FDX["OpenFin8:CA<br/>(open banking)"]
         RPT["Bank8:Reporting<br/>(filing calendar + embedded filing worker)"]
         RSK["Bank8:Risk<br/>(measurement + embedded measure worker)"]
         CMP["Bank8:Compliance<br/>(AML/CTF + embedded screening worker)"]
@@ -98,7 +98,7 @@ graph TD
 |---|---|---|---|
 | `services/ledger` | Rust service | Core ledger: accounts, products, postings, balances, schedules, config library (91 endpoints, 44 tables) | `services/ledger/{README,DESIGN,BUSINESS}.md` |
 | `services/payments` | Rust service | Payment orchestration: instructions, scheme flows, cards, mandates, rules + the embedded async re-drive worker (90 endpoints, 55 tables) | `services/payments/{README,DESIGN,BUSINESS}.md` |
-| `services/fdx` | Rust service | FDX v6.5 open banking: consent-checked data sharing, notifications (71 routes, 15 tables) | `services/fdx/{README,DESIGN,BUSINESS}.md` |
+| `openfin8:ca` (composed) | Rust service (OpenFin8 vertical) | Canadian open banking (FDX v6.x): consent-checked data sharing, notifications | `../openfin8/openfin8-ca/{README,DESIGN,BUSINESS}.md` |
 | `services/reporting` | Rust service | Regulatory reporting: jurisdiction registry, filing calendar, generation/packaging (XBRL/CSV), submission/amendment, AML/CTF filing - the vertical's single filing executor | `services/reporting/{README,DESIGN,BUSINESS}.md` |
 | `services/risk` | Rust service | Prudential risk: exposures, capital (Basel), liquidity (LCR/NSFR), IFRS 9 ECL, limit monitoring with breach events, stress scenarios | `services/risk/{README,DESIGN,BUSINESS}.md` |
 | `services/compliance` | Rust service | AML/CTF: KYC/CDD, beneficial ownership, PEP, sanctions screening, transaction monitoring, alert/case lifecycle - detection only, filing via Reporting | `services/compliance/{README,DESIGN,BUSINESS}.md` |

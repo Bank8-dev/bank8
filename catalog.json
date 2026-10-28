@@ -14,13 +14,6 @@
     ]
   },
   {
-    "service_type": "bank8:fdx",
-    "binary": "bank8-fdx",
-    "database_env_vars": [
-      "BANK8_FDX_DATABASE_URL"
-    ]
-  },
-  {
     "service_type": "bank8:reporting",
     "binary": "bank8-reporting",
     "database_env_vars": [

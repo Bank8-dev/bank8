@@ -28,13 +28,13 @@ graph TD
         subgraph bank8["bank8/ (this vertical)"]
             LEDGER["Bank8:Ledger"]
             PAY["Bank8:Payments<br/>(incl. embedded re-drive worker)"]
-            FDX["Bank8:FDX"]
+            FDX["OpenFin8:CA"]
             RPT["Bank8:Reporting<br/>(filing executor + embedded filing worker)"]
             RSK["Bank8:Risk<br/>(measurement + embedded measure worker)"]
             CMP["Bank8:Compliance<br/>(AML/CTF + embedded screening worker)"]
             APPS["4 Flutter apps"]
             SDK["sdk/rust/bank8 +<br/>crates/*/contracts"]
-            PG[("bank8 database<br/>schemas: ledger · payments · fdx ·<br/>reporting · risk · compliance")]
+            PG[("bank8 database<br/>schemas: ledger · payments · open_ca ·<br/>reporting · risk · compliance")]
         end
     end
     ROOT --> CAPT --> SVC
@@ -104,12 +104,12 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
     participant R as Data recipient
-    participant F as Bank8:FDX
+    participant F as OpenFin8:CA
     participant A as Sentin8:Auth
     participant L as Bank8:Ledger
     R->>F: consent start (PAR/PKCE)
     F->>A: certificate identity + authorization (hosted consent RFW)
-    A-->>R: consent grant (fdx:consent:created event)
+    A-->>R: consent grant (openfin8:ca:consent:created event)
     R->>F: GET /fdx/v6/accounts (recipient token)
     F->>F: consent middleware + CSDF
     F->>L: account read (public API, provider env)
@@ -124,11 +124,11 @@ sequenceDiagram
     participant S as Sentin8:Sys
     participant B as Sentin8:Bus (sys family)
     participant L as Bank8:Ledger
-    participant F as Bank8:FDX
+    participant F as OpenFin8:CA
     S->>B: sentin8:sys:service:updated {enabled}
     B-->>L: SSE consumer (group bank8-ledger-envinit)
     L->>L: seed internal accounts (idempotent)
-    B-->>F: SSE consumer (group bank8-fdx-envinit)
+    B-->>F: SSE consumer (group openfin8-ca-envinit)
     F->>F: auto-register provider profile
     Note over L,F: platform emits, verticals self-init -<br/>zero vertical knowledge in sentin8
 ```
@@ -142,13 +142,13 @@ erDiagram
     BANK8_DB["bank8 database"]
     BANK8_DB ||--|| SCHEMA_LEDGER : "schema ledger"
     BANK8_DB ||--|| SCHEMA_PAYMENTS : "schema payments"
-    BANK8_DB ||--|| SCHEMA_FDX : "schema fdx"
+    BANK8_DB ||--|| SCHEMA_OPEN_CA : "schema open_ca"
     SCHEMA_LEDGER ||--|{ TBL_LEDGER : "domain tables (44, unprefixed)"
     SCHEMA_LEDGER ||--|{ PROD1 : "ledger.outbox + ledger.audit_journal"
     SCHEMA_PAYMENTS ||--|{ TBL_PAYMENTS : "domain tables (55, unprefixed)"
     SCHEMA_PAYMENTS ||--|{ PROD2 : "payments.outbox + payments.audit_journal"
-    SCHEMA_FDX ||--|{ TBL_FDX : "domain tables (15, unprefixed)"
-    SCHEMA_FDX ||--|{ PROD3 : "fdx.outbox + fdx.audit_journal"
+    SCHEMA_OPEN_CA ||--|{ TBL_OPEN_CA : "domain tables (15, unprefixed)"
+    SCHEMA_OPEN_CA ||--|{ PROD3 : "fdx.outbox + fdx.audit_journal"
 ```
 
 - **Schema-per-service**: each service's schema is its primary domain
@@ -171,7 +171,7 @@ erDiagram
   + `{leaf}.audit_journal` per service - drained by the shell's relay
   (step 8b) and journal pusher (step 8c).
 - Per-table catalogs: `services/ledger/DESIGN.md` §3,
-  `services/payments/DESIGN.md` §3, `services/fdx/DESIGN.md` §3.
+  `services/payments/DESIGN.md` §3, `../openfin8/openfin8-ca/DESIGN.md` §3 (the OpenFin8 vertical).
 
 ## 4. API Surface
 

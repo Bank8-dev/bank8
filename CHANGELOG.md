@@ -1,5 +1,51 @@
 # Changelog - bank8
 
+## [Unreleased] - OBVERT: open banking split into the OpenFin8 vertical
+
+- **openfin8** is a new vertical (GitHub org
+  [OpenFin8](https://github.com/OpenFin8)): the open-finance layer -
+  consent ledger, recipient registry, CSDF minimization,
+  notifications - extracted from bank8 because the standards moved
+  from open banking to open finance (FDX payroll/agentic AI, UK
+  Future Entity, BR phases 4-5, EU openFinance API Framework, AU
+  sector-agnostic CDR); banking is its first sector, not its
+  container.
+- **Renames**: bank8-open-core -> openfin8-core (crate
+  openfin8_core, tag openfin8-v0.1.0); bank8-open-{ca,us,uk} ->
+  openfin8-{ca,us,uk}; service types openfin8:{ca,us,uk}; env
+  prefixes OPENFIN8_{CA,US}_*; scopes openfin8:{xx}:*; event
+  families openfin8:{xx}:*; schemas openfin8_{ca,us}; database
+  openfin8 (DBX §6.6); PG roles openfin8_{xx}_service.
+- **bank8** now composes the provider role: enable openfin8:ca in
+  the bank's environment; Ledger/Payments are consumed by OpenFin8
+  via public APIs + the bank8:: SDK contracts only (the OBVERT
+  invariant).
+- ebank/efintech retarget: serviceName openfin8-ca, scopes
+  openfin8:ca:*.
+
+## [Unreleased] - OBARCH: bank8-fdx -> bank8-open-ca + bank8-open-us
+
+- **bank8-open-core**: the jurisdiction-agnostic open-banking kernel
+  (OBARCH-1) - consent ledger, recipient registry, CSDF, notifications,
+  provider wire - shared byte-for-byte by the country adapters.
+- **bank8-open-ca**: the Canadian consumer-driven-banking adapter over
+  the FDX v6.x wire; the successor of bank8-fdx in this tree. ebank and
+  efintech retarget here (`serviceName: bank8-open-ca`, scopes
+  `bank8:open-ca:*`).
+- **bank8-open-us**: the US FDX adapter over the same kernel
+  (`BANK8_OPEN_US_VERSION`).
+- **bank8-fdx**: retired - the implementation moved to bank8-open-core;
+  the Canadian identity (schema `open_ca`, family `open-ca`, scopes
+  `bank8:open-ca:*`, `BANK8_OPEN_CA_*` envs) replaced it.
+- **Spec publication (OBARCH-2)**: the FDX API specification is licensed
+  (FDX API License Agreement, distributed exclusively by FDX) and is
+  never published - each adapter's published spec carries bank8-owned
+  routes only, enforced by the CI drift guard; customers supply the
+  licensed spec under gitignored `specs/fdx/{version}/`.
+- **Version configurability**: `BANK8_OPEN_{US,CA}_VERSION` (default 6.5)
+  drives the `/fdx/v{major}` route mounts, capability announcements,
+  admin selectors, and the provider-profile seed.
+
 ## v0.3.0 - 2026-09-26
 
 - **Platform re-sync (cert-bound M2M + DBX outbox + Registration v2)**:
