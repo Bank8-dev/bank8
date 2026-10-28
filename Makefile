@@ -24,8 +24,10 @@ CARGO ?= cargo
 # `cd bank8-$$s` has already happened when the prefix expands.
 stamp_env = SENTIN8_BUILD_PROFILE=$(if $(RELEASE),release,debug) SENTIN8_GIT_SHA=$$(git rev-parse --short HEAD 2>/dev/null)
 
-SERVICES := ledger payments fdx reporting risk compliance
-APPS := admin eteller efintech ebank
+SERVICES := ledger payments reporting risk compliance
+# open-ca (the former bank8-fdx) is enrolled from OpenFin8/openfin8-ca - the
+# open-banking service moved to the openfin8 vertical (OBVERT-2)
+APPS := admin eteller ebank
 
 .PHONY: help build build-sdk build-services test status enroll start stop
 
