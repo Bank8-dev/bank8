@@ -29,7 +29,7 @@ SERVICES := ledger payments reporting risk compliance
 # open-banking service moved to the openfin8 vertical (OBVERT-2)
 APPS := admin eteller ebank
 
-.PHONY: help build build-sdk build-services test status enroll start stop
+.PHONY: help build build-sdk build-services clean test status enroll start stop
 
 help: ## Show this help
 	@echo "bank8/ vertical group"
@@ -49,6 +49,18 @@ build-services: build-sdk ## Build every bank8 service repo
 test: ## Run the SDK facade tests + per-service suites
 	@cd bank8-sdk && $(call stamp_env,bank8-sdk) $(CARGO) test
 	@for s in $(SERVICES); do (cd bank8-$$s && $(call stamp_env,bank8-$$s) $(CARGO) test) || true; done
+
+# clean — every child repo's own clean (cargo/flutter target/ + their
+# local .run .run/logs .tmp), then the APP repos (Flutter build/) and
+# the e2e suite. Tree-level .run/.tmp live at the tree root (they are
+# the group's anchors); this group's clean leaves them alone — the ROOT
+# `make clean` owns the whole-tree .run/.tmp teardown.
+clean: ## Clean every child repo (target/, build artifacts, local .run/.tmp)
+	@for d in $$(ls -d bank8-*/ 2>/dev/null); do \
+		[ -f "$$d/Makefile" ] || continue; \
+		echo "==> clean: $$d"; \
+		$(MAKE) --no-print-directory -C "$$d" clean || exit 1; \
+	done
 
 test-openapi: ## Run every bank8 drift-guard test (OAPEC §4.8 — router↔spec sweep)
 	@for d in bank8-*/; do \
