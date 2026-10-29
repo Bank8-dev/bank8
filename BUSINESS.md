@@ -41,7 +41,7 @@
 | 5 | Prudential risk | Continuous exposure measurement from posting/payment events; Basel capital, LCR/NSFR liquidity, IFRS 9 ECL staging; limit monitoring with breach events; declarative stress scenarios | Bank8:Risk |
 | 6 | AML/CTF compliance | KYC/CDD, beneficial ownership, PEP determination, customer risk rating; real-time sanctions screening + transaction monitoring; alert/case lifecycle - detection only, filing via Reporting | Bank8:Compliance |
 | 7 | Customer banking app | Sign-up/sign-in, account opening, balances/transactions, transfers, statements, notifications, consent review/revocation | apps/ebank |
-| 8 | FDX recipient app | Provider discovery, consent journeys, consented account/transaction data - **moved to the openfin8 vertical as eOpenCA** (openfin8-eopenca) | — |
+| 8 | FDX recipient app | Provider discovery, consent journeys, consented account/transaction data - **moved to the openfin8 vertical as eOpenCA** (openfin8-eopenca) | - |
 | 9 | Branch teller terminal | Customer search/onboarding, CIBA-delegated counter operations (cash/cheque deposits, withdrawals, transfers), receipts, ops cockpit (batches, DLQ, decisions, tasks) | apps/eteller |
 | 10 | Vertical admin console | Single staff console rendering the services' RFW admin pages; service health + per-environment service enablement | apps/admin |
 | 11 | Shared contracts & SDK | Typed wire DTOs and a unified Rust SDK facade (`bank8::{service}`) for internal and third-party integrators | crates/*/contracts, sdk/rust/bank8 |

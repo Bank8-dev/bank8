@@ -14,7 +14,7 @@
 SHELL := /bin/bash
 CARGO ?= cargo
 
-# Build identity stamps (BUILDID-1, sentin8-build-info README §3): the
+# Build identity stamps (sentin8-build-info README §3): the
 # stamps ride the SAME shell line as the cargo command — make runs each
 # recipe line in its own shell, so a standalone `export …` line would
 # evaporate before cargo starts. The hash resolves via PLAIN `git
@@ -89,7 +89,7 @@ status: ## Per-repo HEADs
 		printf "%-22s %s\n" "$$d" "$$(git -C $$d log --oneline -1 2>/dev/null | head -c 60)"; \
 	done
 
-# ── Fleet run (STARTSCOPE-1, RS §4.5.2 — the three-level rule) ──────────
+# ── Fleet run (RS §4.5.2 — the three-level rule) ──────────
 # This group's fleet scope: `make start` boots ONLY the platform base +
 # THIS vertical — the SENTIN8_SERVICES boot pin when captain is down,
 # the idempotent `captain start <types>` API form when it is up. The

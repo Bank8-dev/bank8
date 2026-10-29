@@ -182,7 +182,7 @@ and `vertical enroll` registers services/scopes/triggers/apps (both via
   completion, worker stream env binding, schema-per-service consolidation
   - §3 of the top-level `DESIGN.md` reflects the landed schema state).
   Items closed as decisions (certification external by design, cache scopes,
-  colon-form canonical) live in the design docs, not the backlog.
+  colon-form canonical) live in the design docs, not in a tracker.
 
 ---
 

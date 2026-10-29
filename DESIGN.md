@@ -264,7 +264,7 @@ idempotent seeds.
 - Rejected defaults: shared `bank8` superuser DSN for services;
   blanket schema grants; per-handler scope checks.
 
-## 8.1 Fleet-run scope (group operations, STARTSCOPE-1)
+## 8.1 Fleet-run scope (group operations,)
 
 The group Makefile's `make start` boots ONLY the platform base
 (`sentin8:acme, sentin8:auth, sentin8:proxy, sentin8:bus, sentin8:sys,

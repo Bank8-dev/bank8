@@ -26,7 +26,7 @@
 ## [Unreleased] - OBARCH: bank8-fdx -> bank8-open-ca + bank8-open-us
 
 - **bank8-open-core**: the jurisdiction-agnostic open-banking kernel
-  (OBARCH-1) - consent ledger, recipient registry, CSDF, notifications,
+   - consent ledger, recipient registry, CSDF, notifications,
   provider wire - shared byte-for-byte by the country adapters.
 - **bank8-open-ca**: the Canadian consumer-driven-banking adapter over
   the FDX v6.x wire; the successor of bank8-fdx in this tree. ebank and
@@ -37,7 +37,7 @@
 - **bank8-fdx**: retired - the implementation moved to bank8-open-core;
   the Canadian identity (schema `open_ca`, family `open-ca`, scopes
   `bank8:open-ca:*`, `BANK8_OPEN_CA_*` envs) replaced it.
-- **Spec publication (OBARCH-2)**: the FDX API specification is licensed
+- **Spec publication **: the FDX API specification is licensed
   (FDX API License Agreement, distributed exclusively by FDX) and is
   never published - each adapter's published spec carries bank8-owned
   routes only, enforced by the CI drift guard; customers supply the
