@@ -142,7 +142,7 @@ start: ## Start THIS group: platform base + bank8 (STARTSCOPE-1; captain boots s
 	fi; \
 	if $(CLI_RUN) captain services --no-infra >/dev/null 2>&1; then \
 		echo "→ captain up — starting bank8 via API (idempotent): $(SERVICE_TYPES)"; \
-		$(CLI_RUN) captain start $(SERVICE_TYPES); \
+		$(CLI_RUN) captain start "$(SERVICE_TYPES)"; \
 	else \
 		echo "→ captain down — scoped boot (platform base + bank8, STARTSCOPE-1)"; \
 		export SENTIN8_SERVICES="$(GROUP_SCOPE)"; \
