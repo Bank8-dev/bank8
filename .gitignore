@@ -10,4 +10,6 @@
 *.swp
 .idea/
 .vscode/
-bank8.github
+
+# Local org-repo clone (never commit)
+/.github/
