@@ -99,9 +99,20 @@ status: ## Per-repo HEADs
 # (RS §5.1). The catalog stays the FULL union — other groups join the
 # running fleet via their own group start; `make stop` here stops only
 # this group's instances (the captain and the platform stay up).
+SPACE := $(empty) $(empty)
+COMMA := ,
 SERVICE_TYPES := $(patsubst %,bank8:%,$(SERVICES))
+# The comma-joined form rides SENTIN8_SERVICES (the captain's boot allow-list
+# splits on commas only - edge-trimmed tokens, inner spaces stay in the token).
+SERVICE_TYPES_COMMA := $(subst $(SPACE),$(COMMA),$(SERVICE_TYPES))
 PLATFORM_BASE := sentin8:acme,sentin8:auth,sentin8:proxy,sentin8:bus,sentin8:sys,sentin8:bff,sentin8:web
-GROUP_SCOPE := $(PLATFORM_BASE),$(SERVICE_TYPES)
+# GROUP_SCOPE rides SENTIN8_SERVICES which the captain's boot allow-list
+# splits on COMMAS ONLY (captain config.rs; tokens are edge-trimmed, inner
+# spaces stay in the token). The space-joined SERVICE_TYPES therefore made
+# ONE bogus token covering all five services and the scoped boot spawned
+# nothing. Comma-join for the env path; the API path keeps the spaced form
+# (the CLI's own arg parser splits and trims per token).
+GROUP_SCOPE := $(PLATFORM_BASE)$(COMMA)$(subst $(SPACE),$(COMMA),$(SERVICE_TYPES))
 
 # Tree anchors (RS §4.5.1 discipline): the sibling sentin8-cli, the root
 # .env, ONE absolute tree run dir, and the binary-prefix chain covering
@@ -116,7 +127,6 @@ ROOT_ENV := $(TREE_ROOT)/.env
 BINARY_DIR = $(if $(RELEASE),release,debug)
 CLI_BIN := $(firstword $(wildcard $(CLI_DIR)/target/$(BINARY_DIR)/sentin8-cli))
 CLI_RUN = $(if $(CLI_BIN),$(CLI_BIN),cargo run --quiet --manifest-path $(CLI_DIR)/Cargo.toml --bin sentin8-cli --)
-SPACE := $(empty) $(empty)
 PREFIX_DIRS := $(wildcard $(PLATFORM)/sentin8-*/target/$(BINARY_DIR)) $(abspath $(wildcard */target/$(BINARY_DIR)))
 PREFIX := $(subst $(SPACE),:,$(strip $(PREFIX_DIRS:%=%)))
 
@@ -126,26 +136,35 @@ export SENTIN8_LOG_DIR="$(TREE_ROOT)/.run/logs"; \
 export SENTIN8_CAPTAIN_SOCK="$(TREE_ROOT)/.run/captain.sock"
 endef
 
-start: ## Start THIS group: platform base + bank8 (STARTSCOPE-1; captain boots scoped or joins live)
+start: ## Start THIS group: platform base + bank8, or bank8-only under the core appliance
 	@test -f $(ROOT_ENV) || { echo "ERROR: no $(ROOT_ENV) — copy .env.example" >&2; exit 1; }
 	@export SENTIN8_CAPTAIN_BINARY_PREFIX="$(PREFIX)"; \
 	export SENTIN8_PG_POOL_MAX=$${SENTIN8_PG_POOL_MAX:-8}; \
 	set -a; . $(ROOT_ENV); set +a; \
 	$(group_rundir); \
-	if [ -z "$$(docker compose -f $(PLATFORM)/docker-compose.yml ps --status=running -q 2>/dev/null)" ]; then \
+	INFRA_OK=""; \
+for p in 5432 6379; do (echo > /dev/tcp/127.0.0.1/$$p) 2>/dev/null && INFRA_OK="$$INFRA_OK$$p"; done; \
+INFRA_UP=$$(case "$$INFRA_OK" in *5432*6379*) echo yes;; *) echo no;; esac); \
+if [ "$$INFRA_UP" != "yes" ]; then \
 		echo "→ dev infra down — starting PG 18 + Valkey (RS §2.2.1)"; \
 		docker compose -f $(PLATFORM)/docker-compose.yml up -d >/dev/null || exit 1; \
 		for i in $$(seq 1 30); do \
-			n=$$(docker compose -f $(PLATFORM)/docker-compose.yml ps --status=running -q 2>/dev/null | wc -l); \
+			pg=vk=0; (echo > /dev/tcp/127.0.0.1/5432) 2>/dev/null && pg=1; (echo > /dev/tcp/127.0.0.1/6379) 2>/dev/null && vk=1; n=$$((pg+vk)); \
 			[ "$$n" -ge 2 ] && break; sleep 1; \
 		done; \
 	fi; \
-	if $(CLI_RUN) captain services --no-infra >/dev/null 2>&1; then \
-		echo "→ captain up — starting bank8 via API (idempotent): $(SERVICE_TYPES)"; \
-		$(CLI_RUN) captain start "$(SERVICE_TYPES)"; \
+	APPLIANCE_RUNNING=$$(docker inspect -f '{{.State.Running}}' sentin8core-machine 2>/dev/null); \
+	if [ "$$APPLIANCE_RUNNING" = "true" ]; then \
+		BOOT_SCOPE="$(SERVICE_TYPES_COMMA)"; \
 	else \
-		echo "→ captain down — scoped boot (platform base + bank8, STARTSCOPE-1)"; \
-		export SENTIN8_SERVICES="$(GROUP_SCOPE)"; \
+		BOOT_SCOPE="$(GROUP_SCOPE)"; \
+	fi; \
+	if $(CLI_RUN) captain services --no-infra >/dev/null 2>&1; then \
+		echo "→ captain up — starting via API (idempotent): $$BOOT_SCOPE"; \
+		$(CLI_RUN) captain start "$$BOOT_SCOPE"; \
+	else \
+		echo "→ captain down — scoped boot (STARTSCOPE-1): $$BOOT_SCOPE"; \
+		export SENTIN8_SERVICES="$$BOOT_SCOPE"; \
 		$(CLI_RUN) captain start; \
 	fi
 
