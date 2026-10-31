@@ -1,7 +1,6 @@
 # bank8 - Detailed Design Document (Vertical)
 
 > Secure Post-Quantum-Safe Core Banking, ISO 20022 Payments Secure Post-Quantum-Safe Core Banking & ISO 20022 Payment Platform That Heals and Scales Itself. Open Banking Platform That Heals and Scales Itself.
-
 Per-unit DDDs live beside each service/crate
 (`services/{svc}/DESIGN.md`, `crates/*/contracts/README.md`,
 `sdk/rust/bank8/README.md`). This document covers what is only visible
@@ -175,6 +174,20 @@ erDiagram
 
 ## 4. API Surface
 
+### Function hooks (Sentin8:Func integration)
+
+| Direction | Route / mechanism | Semantics |
+|---|---|---|
+| ledger → Func | product-version `sentin8_func_version_id`, schedule contracts, supervisor-contract `func_module_id` | the ledger invokes hooks (`pre_posting`/`post_posting`/`scheduled_event`/`activation`/`deactivation`) with a self-contained context envelope |
+| Func → ledger | `POST /v1/internal/func-host` (M2M, env cross-checked) | host functions the sandbox may call: `get_account`, `get_balance`, `set_flag`, `create_posting` (money moves only by re-entering the posting pipeline) |
+| payments → Func | `POST /v1/logics/{id}/migrate-wasm` | converts an instruction logic's inline `BasicStep` hooks into Func WASM modules (per-step results) |
+| simulate | `POST /v1/contracts/simulate` | dry-run a module against synthetic account state; journaled, no domain rows written |
+| registry | `ledger.product_versions` (`wasm_hash`, `wasm_language` in {rust, typescript}, `hooks`, per-version parameters; `pending_…_version_id` flip) | per-product-version WASM registry; activation is a pointer swap, no restart |
+
+Module lifecycle lives on the platform side (draft → active → deprecated
+on Sentin8:Func; fuel/memory/epoch sandbox, WASI rejected at upload);
+the vertical owns only the hook contract and the registry above.
+
 No vertical-level API of its own - every endpoint belongs to a
 service (see each DESIGN.md §4). The vertical's external contract is:
 
@@ -220,6 +233,12 @@ apps ×4, and per-service `admin_scopes`/`policies`/`m2m_grants`/`pg_roles`/
 - **TLS**: in-process PQ-TLS; `X-Sentin8-*` headers are the only
   tenant source; service ports are auto-assigned (proxy is the single
   ingress).
+- **Product extension (WASM edge functions)**: tenant logic never runs
+  inside a vertical service - the ledger calls Sentin8:Func around its
+  atomic commit and serves only the proxy-back host-function endpoint;
+  the Func sandbox (fuel, memory, epoch deadline, import allowlist)
+  contains any module failure, and even hook-initiated postings re-enter
+  the standard validation pipeline.
 
 ## 6. Failure Modes & Recovery
 

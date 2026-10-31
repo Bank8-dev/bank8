@@ -1,5 +1,20 @@
 # Changelog - bank8
 
+## [Unreleased] - EXT: edge-function extensibility documented
+
+- **Extensibility documented as a first-class capability**: product
+  logic ships as sandboxed WASM edge functions on Sentin8:Func - a new
+  site page (`docs/extensibility`), a landing section, an added
+  business capability block (§3.2 in `BUSINESS.md`), and the
+  wire-level contract in `DESIGN.md` §4: ledger hooks
+  (`pre_posting`/`post_posting`/`scheduled_event`/`activation`/`deactivation`),
+  the `POST /v1/internal/func-host` proxy-back host functions,
+  `POST /v1/contracts/simulate`, the per-product-version WASM registry
+  (pending → active pointer swap, no restart), and Payments'
+  `POST /v1/logics/{id}/migrate-wasm`. Zero core restarts; the
+  sandbox (fuel/memory/epoch, WASI rejected) keeps a failed module
+  out of the ledger's blast radius.
+
 ## [Unreleased] - OBVERT: open banking split into the OpenFin8 vertical
 
 - **openfin8** is a new vertical (GitHub org

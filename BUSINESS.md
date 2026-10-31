@@ -2,6 +2,11 @@
 
 > Secure Post-Quantum-Safe Core Banking, ISO 20022 Payments Secure Post-Quantum-Safe Core Banking & ISO 20022 Payment Platform That Heals and Scales Itself. Open Banking Platform That Heals and Scales Itself.
 
+> Product extensibility in one line: banking behavior ships as
+> sandboxed WASM edge functions on Sentin8:Func - isolated from the
+> core ledger's atomic commit, polyglot (Rust/TypeScript first-class),
+> and deployed with zero downtime.
+
 > Audience: product owners, business analysts, and anyone evaluating what the
 > bank8 vertical **does for the business**. For the overview read `README.md`;
 > for wire-level detail read `DESIGN.md`. Per-unit BRDs live beside each
@@ -40,12 +45,13 @@
 | 4 | Regulatory reporting | Jurisdiction registry as runtime data; filing calendar; return generation + XBRL/CSV packaging; submission/amendment lifecycle; AML/CTF filing (STR/SAR/CTR/EFTR/LCTR) - the vertical's single filing executor | Bank8:Reporting |
 | 5 | Prudential risk | Continuous exposure measurement from posting/payment events; Basel capital, LCR/NSFR liquidity, IFRS 9 ECL staging; limit monitoring with breach events; declarative stress scenarios | Bank8:Risk |
 | 6 | AML/CTF compliance | KYC/CDD, beneficial ownership, PEP determination, customer risk rating; real-time sanctions screening + transaction monitoring; alert/case lifecycle - detection only, filing via Reporting | Bank8:Compliance |
-| 7 | Customer banking app | Sign-up/sign-in, account opening, balances/transactions, transfers, statements, notifications, consent review/revocation | apps/ebank |
-| 8 | FDX recipient app | Provider discovery, consent journeys, consented account/transaction data - **moved to the openfin8 vertical as eOpenCA** (openfin8-eopenca) | - |
-| 9 | Branch teller terminal | Customer search/onboarding, CIBA-delegated counter operations (cash/cheque deposits, withdrawals, transfers), receipts, ops cockpit (batches, DLQ, decisions, tasks) | apps/eteller |
-| 10 | Vertical admin console | Single staff console rendering the services' RFW admin pages; service health + per-environment service enablement | apps/admin |
-| 11 | Shared contracts & SDK | Typed wire DTOs and a unified Rust SDK facade (`bank8::{service}`) for internal and third-party integrators | crates/*/contracts, sdk/rust/bank8 |
-| 12 | Quality & delivery gates | UI-only Playwright E2E lifecycle; Debian packaging (.deb with binaries + SQL + registry + app assets) | bank8-e2e, packaging/debian |
+| 7 | Product extensibility | Tenant-authored banking behavior (fee hooks, tiered interest, velocity limits, sweeps) compiled to WASM and executed in Sentin8:Func - sandboxed edge functions around the ledger's atomic commit; product changes deploy as data operations, zero core restart | Sentin8:Func + ledger/hooks |
+| 8 | Customer banking app | Sign-up/sign-in, account opening, balances/transactions, transfers, statements, notifications, consent review/revocation | apps/ebank |
+| 9 | FDX recipient app | Provider discovery, consent journeys, consented account/transaction data - **moved to the openfin8 vertical as eOpenCA** (openfin8-eopenca) | - |
+| 10 | Branch teller terminal | Customer search/onboarding, CIBA-delegated counter operations (cash/cheque deposits, withdrawals, transfers), receipts, ops cockpit (batches, DLQ, decisions, tasks) | apps/eteller |
+| 11 | Vertical admin console | Single staff console rendering the services' RFW admin pages; service health + per-environment service enablement | apps/admin |
+| 12 | Shared contracts & SDK | Typed wire DTOs and a unified Rust SDK facade (`bank8::{service}`) for internal and third-party integrators | crates/*/contracts, sdk/rust/bank8 |
+| 13 | Quality & delivery gates | UI-only Playwright E2E lifecycle; Debian packaging (.deb with binaries + SQL + registry + app assets) | bank8-e2e, packaging/debian |
 
 **What the vertical does NOT own (business boundary):**
 
@@ -64,7 +70,24 @@
 
 ## 3. Business Capabilities
 
-### 3.1 Core banking (Bank8:Ledger)
+### 3.2 Product extensibility (Edge functions on Sentin8:Func)
+
+The ledger decouples money movement from product logic: custom banking
+behavior compiles to WASM and executes in the platform's isolated
+edge-function service, reacting to ledger events through typed hooks.
+Product changes are deployments of data, not engineering releases.
+
+| Capability | Business rule |
+|---|---|
+| Hook points | The ledger fires `pre_posting` (before an instruction commits), `post_posting` (after the batch commits), `scheduled_event` (interest/fee timing), and account `activation`/`deactivation` hooks; supervisor contracts (sweeps) bind a module id directly. |
+| Blast radius | Executing a broken or malicious module cannot corrupt the core: linear-memory sandbox + fuel cap + wall-clock deadline, WASI refused at upload, imports restricted to declared host functions - a module failure is a structured error, never a ledger defect. |
+| Polyglot authoring | First-class targets are Rust and TypeScript; any language producing standard WASM works - no proprietary scripting language, no vendor lock-in. |
+| Product versioning | Every product version owns a WASM registry entry (sha256 hash, size, language, declared hooks, per-version parameters) with a pending → active pointer - activating a new version needs no core restart. |
+| Safe rollout | Modules pass upload validation, then a synthetic-state simulation (`POST /v1/contracts/simulate`, journaled, no domain writes) before activation - payment logics can migrate inline hooks to Func modules in one call (`POST /v1/logics/{id}/migrate-wasm`). |
+| Extension discipline | A hook moves money only by re-entering the posting pipeline via the proxy-back endpoint - unbalanced batches are still rejected, idempotency keys still dedupe; extension never relaxes a core invariant. |
+| Zero-downtime | Module lifecycle is draft → active → deprecated; activating supersedes the running version with no service restart, so fee/pricing updates are mid-day data operations, not change windows. |
+
+### 3.3 Core banking (Bank8:Ledger)
 
 | Capability | Business rule |
 |---|---|
@@ -79,7 +102,7 @@
 | Bulk & control | Account migrations/update batches with per-item retry; processing groups pause/resume batch windows. |
 | Seeded plumbing | Internal counterparty accounts (interest, fee, penalty, teller cash/cheque/clearing/suspense) are seeded per denomination when the ledger is enabled - every booked amount has a real counterparty account. |
 
-### 3.2 Payment orchestration (Bank8:Payments)
+### 3.5 Payment orchestration (Bank8:Payments)
 
 | Capability | Business rule |
 |---|---|
@@ -93,7 +116,7 @@
 | Recurring | Recurring/scheduled payments register with Sentin8:Cron; timing is platform-owned, execution re-enters the same instruction pipeline. |
 | Sandbox | Scheme simulators (cards, credit transfers, FedNow, SWIFT AGI) exercise production-parity paths for integration testing without live schemes. |
 
-### 3.3 Open banking (OpenFin8:CA)
+### 3.6 Open banking (OpenFin8:CA)
 
 | Capability | Business rule |
 |---|---|
@@ -106,7 +129,7 @@
 | Notifications | Delivery pushes HMAC-signed webhook notifications per subscription with retry backoff; exhausted deliveries are marked failed for admin triage, never silently dropped. |
 | Certification | `/fdx/v6/certification-metrics` derives data-call and consent-transition evidence from audited traffic for FDX certification review. |
 
-### 3.4 Experiences (apps)
+### 3.7 Experiences (apps)
 
 | App | Persona | Capability rules |
 |---|---|---|
@@ -163,6 +186,10 @@ platform trigger (event naming: `bank8:{service}:{resource}:{operation}`):
     sealed DPoP key reference).
 12. **Drafts never execute** - unpublished rule versions cannot affect
     payment outcomes; simulators are explicit, production-parity paths.
+13. **Extension code stays outside the core's blast radius** - tenant
+    hooks run as sandboxed WASM on Sentin8:Func, never in the ledger's
+    transaction loop; a hook can only act on money through the same
+    validated posting pipeline every internal caller uses.
 
 ## 6. Target-User Roles & Use Cases
 

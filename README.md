@@ -33,6 +33,20 @@ on banking rules instead of re-implementing infrastructure, and
 guarantees every service inherits the platform's authorization
 pipeline and audit posture.
 
+A differentiating consequence: **product logic is external by
+default**. Custom banking behavior (fees, tiered interest, velocity
+limits, sweeps) compiles to WASM and executes in Sentin8:Func - the
+platform's isolated edge-function service - invoked around the
+ledger's atomic commit through typed hooks (`pre_posting`,
+`post_posting`, `scheduled_event`, activation/deactivation) and calling
+back through a certificate-bound host-function endpoint. The core
+ledger carries no script engine and no WASM runtime of its own; a
+buggy hook fails inside its sandbox (fuel + memory + epoch deadline,
+WASI rejected) while the posting transaction stays intact, and product
+changes deploy as data operations (`upload → validate → simulate →
+activate`) with **zero core restarts**. Launching a product is a
+deployment, not an engineering release.
+
 ## 3. Documentation map
 
 | Document | Audience | Content |
@@ -87,6 +101,8 @@ graph TD
     RSK -->|"limit:breached → Bus"| CMP
     PAY <-->|"workflows + step profiles"| FLOW
     CRON & FUNC -->|"proxy-back /v1/internal/*"| LEDGER & PAY
+    FUNC -.->|"executes hooks: pre/post_posting · scheduled"| LEDGER
+    PAY -.->|"instruction logics · migrate-wasm"| FUNC
     LEDGER & PAY & FDX & RPT & RSK & CMP <-->|"tables + RLS"| PG
     SDK --- CT
 ```
@@ -139,7 +155,13 @@ graph TD
   no shared vertical-wide schema and no blanket cross-service grants.
 - **Delegation over embedding**: scheduling → Sentin8:Cron, hooks →
   Sentin8:Func, orchestration → Sentin8:Flow; the services implement
-  only proxy-back handlers.
+  only proxy-back handlers. Rejected: embedding a scripting engine in
+  the ledger's transaction loop - tenant code would sit inside the
+  money-movement path; the Func split keeps extension code outside
+  the core's blast radius. Rejected: embedding a scripting engine in
+  the ledger's transaction loop - it would put tenant code inside the
+  money-movement path; the Func split keeps extension code out of the
+  blast radius of the core.
 - **Rejected: a monolithic "banking" service** - the
   ledger/payments/fdx split keeps money movement (ledger) separate
   from orchestration (payments) and data sharing (fdx), each with its
