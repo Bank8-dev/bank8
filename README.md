@@ -14,8 +14,8 @@ data exchange, and the customer/staff Flutter apps that use them.
 
 ## 1. Summary
 
-bank8 is the finance vertical of the Sentin8 platform: six Rust
-services (ledger, payments, fdx, reporting, risk, compliance) that own
+bank8 is the finance vertical of the Sentin8 platform: five Rust
+services (ledger, payments, reporting, risk, compliance) that own
 the bank8 PostgreSQL database, four contract crates, a unified Rust SDK
 facade,
 and four Flutter apps. It contains no platform infrastructure of its
@@ -54,7 +54,7 @@ deployment, not an engineering release.
 | `README.md` (this file) | Evaluators / newcomers | What the vertical is, how its units fit together |
 | `DESIGN.md` | Maintainers / architects | Vertical-level DDD: cross-service flows, vertical database, deployment lifecycle, registration contract |
 | `BUSINESS.md` | Product owners / analysts | The business rollup: capabilities, rules, personas, KPIs, acceptance criteria |
-| `services/*/README.md` · `DESIGN.md` · `BUSINESS.md` | Per-service | Overview, wire-level DDD, per-service BRD (ledger · payments · fdx) |
+| `services/*/README.md` · `DESIGN.md` · `BUSINESS.md` | Per-service | Overview, wire-level DDD, per-service BRD (ledger · payments) |
 | `apps/*/README.md` · `DESIGN.md` · `BUSINESS.md` | Per-app | Overview, app DDD (bootstrap/proxy/routing), app BRD (ebank · eteller · admin; the recipient app eOpenCA lives in the openfin8 vertical) |
 | `crates/*/contracts/README.md`, `sdk/rust/bank8/README.md` | Integrators | Contract crates and the SDK facade |
 | `BACKLOG.md` | Planning | The live story list (open only) |
@@ -88,12 +88,15 @@ graph TD
         CMP["Bank8:Compliance<br/>(AML/CTF + embedded screening worker)"]
         SDK["bank8 SDK facade"]
         CT["contracts crates"]
-        PG[("bank8 database<br/>one schema per service:<br/>ledger · payments · fdx ·<br/>reporting · risk · compliance")]
+        PG[("bank8 database<br/>one schema per service:<br/>ledger · payments ·<br/>reporting · risk · compliance")]
     end
     EB & EF & ET & AD --> BFF
-    BFF -->|"user tokens /proxy/*"| LEDGER & PAY & FDX & RPT & RSK & CMP
-    LEDGER & PAY & FDX & RPT & RSK & CMP <-->|"workload certificate / verify"| AUTH
-    LEDGER & PAY & FDX & RPT & RSK & CMP -->|"local outbox → relay"| BUS
+    BFF -->|"user tokens /proxy/*"| LEDGER & PAY & RPT & RSK & CMP
+    BFF -->|"user tokens /proxy/*"| FDX
+    LEDGER & PAY & RPT & RSK & CMP <-->|"workload certificate / verify"| AUTH
+    FDX <-->|"workload certificate / verify"| AUTH
+    LEDGER & PAY & RPT & RSK & CMP -->|"local outbox → relay"| BUS
+    FDX -->|"local outbox → relay"| BUS
     BUS -->|"instruction events (embedded worker SSE)"| PAY
     BUS -->|"posting/customer events (embedded workers SSE)"| RSK & CMP
     BUS -->|"filing events (embedded worker SSE)"| RPT
@@ -103,7 +106,7 @@ graph TD
     CRON & FUNC -->|"proxy-back /v1/internal/*"| LEDGER & PAY
     FUNC -.->|"executes hooks: pre/post_posting · scheduled"| LEDGER
     PAY -.->|"instruction logics · migrate-wasm"| FUNC
-    LEDGER & PAY & FDX & RPT & RSK & CMP <-->|"tables + RLS"| PG
+    LEDGER & PAY & RPT & RSK & CMP <-->|"tables + RLS"| PG
     SDK --- CT
 ```
 
@@ -117,7 +120,7 @@ graph TD
 | `services/reporting` | Rust service | Regulatory reporting: jurisdiction registry, filing calendar, generation/packaging (XBRL/CSV), submission/amendment, AML/CTF filing - the vertical's single filing executor | `services/reporting/{README,DESIGN,BUSINESS}.md` |
 | `services/risk` | Rust service | Prudential risk: exposures, capital (Basel), liquidity (LCR/NSFR), IFRS 9 ECL, limit monitoring with breach events, stress scenarios | `services/risk/{README,DESIGN,BUSINESS}.md` |
 | `services/compliance` | Rust service | AML/CTF: KYC/CDD, beneficial ownership, PEP, sanctions screening, transaction monitoring, alert/case lifecycle - detection only, filing via Reporting | `services/compliance/{README,DESIGN,BUSINESS}.md` |
-| `crates/{ledger,payments,fdx,regulatory}/contracts` | Rust crates | Wire-type DTOs shared by services and SDK | `crates/*/contracts/README.md` |
+| `crates/{ledger,payments,regulatory}/contracts` | Rust crates | Wire-type DTOs shared by services and SDK (open-banking contracts live in the OpenFin8 vertical) | `crates/*/contracts/README.md` |
 | `sdk/rust/bank8` | Rust facade | Unified namespace facade: typed clients + contracts | `sdk/rust/bank8/README.md` |
 | `apps/{ebank,eteller,admin}` | Flutter apps | Customer and staff experiences | `apps/*/{README,DESIGN,BUSINESS}.md` |
 | `bank8-e2e` | Playwright | UI-only end-to-end suite through the BFF proxy | `bank8-e2e/README.md` |
@@ -132,7 +135,7 @@ graph TD
 - **Double-entry ledger** - posting batches are balance-validated per
   denomination before any write; balances/instructions/transactions +
   audit + outbox commit atomically.
-- **Consent authority** - FDX: every provider data call passes the
+- **Consent authority** - open banking (OpenFin8): every provider data call passes the
   consent middleware (valid, unexpired, scope-covered) plus CSDF
   minimization.
 - **Event vocabulary** - `bank8:{service}:{resource}:{operation}` over
@@ -149,7 +152,7 @@ graph TD
   (zero compile-time vertical knowledge flows the other way, too:
   principles §4.14).
 - **Database-per-vertical, schema-per-service**: each service owns its
-  own schema (`ledger`, `payments`, `fdx`) for domain tables and its
+  own schema (`ledger`, `payments`) for domain tables and its
   producer tables (outbox/audit journal) in the same schema, so the
   shell relay resolves them via role search_path `{leaf}, public`;
   no shared vertical-wide schema and no blanket cross-service grants.
@@ -163,8 +166,8 @@ graph TD
   money-movement path; the Func split keeps extension code out of the
   blast radius of the core.
 - **Rejected: a monolithic "banking" service** - the
-  ledger/payments/fdx split keeps money movement (ledger) separate
-  from orchestration (payments) and data sharing (fdx), each with its
+  ledger/payments split keeps money movement (ledger) separate
+  from orchestration (payments), each with its
   own scopes, tables, and event families.
 
 ## 7. Internal Implementation & Invariants
@@ -200,7 +203,7 @@ and `vertical enroll` registers services/scopes/triggers/apps (both via
 
 - Each service's `DESIGN.md` §10 carries the decided directions for its
   open items; the root `BACKLOG.md` is the live story list (open stories
-  only: identity-invalidation relay, FDX tenant-context discipline
+  only: identity-invalidation relay, tenant-context discipline
   completion, worker stream env binding, schema-per-service consolidation
   - §3 of the top-level `DESIGN.md` reflects the landed schema state).
   Items closed as decisions (certification external by design, cache scopes,

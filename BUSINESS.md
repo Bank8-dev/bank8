@@ -19,7 +19,8 @@
 ## 1. Business Purpose
 
 - **A complete retail bank on platform rails** - deposit and lending accounts,
-  card issuing, domestic and cross-border payments, and FDX v6.5 open banking
+  card issuing, domestic and cross-border payments; FDX v6.5 open banking
+  is the OpenFin8 vertical (openfin8-ca), composed into bank8 environments
   delivered as one installable vertical, composed entirely on Sentin8
   platform services (identity, events, workflows, scheduling, storage).
 - **Provable money invariants** - double-entry atomicity, idempotent money
@@ -47,7 +48,7 @@
 | 6 | AML/CTF compliance | KYC/CDD, beneficial ownership, PEP determination, customer risk rating; real-time sanctions screening + transaction monitoring; alert/case lifecycle - detection only, filing via Reporting | Bank8:Compliance |
 | 7 | Product extensibility | Tenant-authored banking behavior (fee hooks, tiered interest, velocity limits, sweeps) compiled to WASM and executed in Sentin8:Func - sandboxed edge functions around the ledger's atomic commit; product changes deploy as data operations, zero core restart | Sentin8:Func + ledger/hooks |
 | 8 | Customer banking app | Sign-up/sign-in, account opening, balances/transactions, transfers, statements, notifications, consent review/revocation | apps/ebank |
-| 9 | FDX recipient app | Provider discovery, consent journeys, consented account/transaction data - **moved to the openfin8 vertical as eOpenCA** (openfin8-eopenca) | - |
+| 9 | Open-banking recipient app | Provider discovery, consent journeys, consented account/transaction data - **owned by the openfin8 vertical as eOpenCA** (openfin8-eopenca) | - |
 | 10 | Branch teller terminal | Customer search/onboarding, CIBA-delegated counter operations (cash/cheque deposits, withdrawals, transfers), receipts, ops cockpit (batches, DLQ, decisions, tasks) | apps/eteller |
 | 11 | Vertical admin console | Single staff console rendering the services' RFW admin pages; service health + per-environment service enablement | apps/admin |
 | 12 | Shared contracts & SDK | Typed wire DTOs and a unified Rust SDK facade (`bank8::{service}`) for internal and third-party integrators | crates/*/contracts, sdk/rust/bank8 |
@@ -125,7 +126,7 @@ Product changes are deployments of data, not engineering releases.
 | Data minimization | Responses are projected to the granted CSDF clusters before serialization, narrowed by scope, product category, and requested fields; unknown scopes grant nothing. |
 | Recipient onboarding | External recipients register dynamically (RFC 7591/7592 DCR proxy) with DPoP sender-constrained tokens; no static recipient list exists. |
 | Data serving | Consented accounts, transactions, statements, and customer info are served through `/fdx/v6/*`; unimplemented FDX families (rewards, tax forms, investments) return the standard FDX unsupported response. |
-| Money movement | Recipient-initiated transfers/payments are consent-checked by FDX and executed by Bank8:Payments - one executor for money movement. |
+| Money movement | Recipient-initiated transfers/payments are consent-checked by open banking (OpenFin8) and executed by Bank8:Payments - one executor for money movement. |
 | Notifications | Delivery pushes HMAC-signed webhook notifications per subscription with retry backoff; exhausted deliveries are marked failed for admin triage, never silently dropped. |
 | Certification | `/fdx/v6/certification-metrics` derives data-call and consent-transition evidence from audited traffic for FDX certification review. |
 
@@ -152,7 +153,7 @@ platform trigger (event naming: `bank8:{service}:{resource}:{operation}`):
 
 | Event | Consumer | Reaction |
 |---|---|---|
-| `sentin8:sys:service:updated {enabled}` | ledger + fdx env-init consumers | idempotent per-tenant seeding - internal counterparty accounts; provider profile + recipient-client registration |
+| `sentin8:sys:service:updated {enabled}` | ledger env-init consumer (the OpenFin8 services register their own) | idempotent per-tenant seeding - internal counterparty accounts; provider profile + recipient-client registration |
 | `bank8:payments:instruction:*` | payments embedded worker | guarded re-drive of stalled/failed instructions via Flow |
 | `bank8:payments:instruction:completed` | ledger trigger (registered) | posting callback reconciliation |
 
@@ -161,10 +162,11 @@ platform trigger (event naming: `bank8:{service}:{resource}:{operation}`):
 1. **Books never drift** - a posting batch that does not balance per
    denomination is rejected before any row is written.
 2. **Money movement has one executor** - all movement, from app transfers to
-   FDX-initiated payments, realizes as Bank8:Ledger postings via the public
+   open-banking-initiated payments, realizes as Bank8:Ledger postings via the
+   public
    API; no service ever writes another's balances or tables.
 3. **Retries are safe by construction** - posting/instruction idempotency keys
-   are unique per tenant; teller retries, FDX money movement replays, and
+   are unique per tenant; teller retries, payment instruction replays, and
    schedule re-runs can never double-post.
 4. **Terminal states are final** - completed/cancelled/revoked/closed states
    never regress; every state transition is a guarded update.
@@ -195,12 +197,12 @@ platform trigger (event naming: `bank8:{service}:{resource}:{operation}`):
 
 | Persona | What they do with the vertical |
 |---|---|
-| Retail customer | Banks end-to-end from the eBank app: sign-up, open products, monitor balances/transactions, transfer, download statements, grant/revoke FDX sharing. |
+| Retail customer | Banks end-to-end from the eBank app: sign-up, open products, monitor balances/transactions, transfer, download statements, grant/revoke open-banking data sharing. |
 | Fintech customer | Uses the recipient app (eOpenCA, openfin8 vertical) to discover the bank as a provider, consent, and view consented account/transaction data. |
 | Branch teller | Serves walk-in customers from eTeller: onboarding, customer-approved counter operations, receipts. |
 | Branch operations staff | Administers batches, DLQ replay, manual decisions, approval tasks from the admin console. |
-| Bank administrator | Manages products, FDX provider profile, recipient registrations, service enablement, and monitors health from the admin console. |
-| External FDX recipient (machine persona) | Registers dynamically, consumes consented data under CSDF minimization, receives signed notifications. |
+| Bank administrator | Manages products, the open-banking provider profile, recipient registrations, service enablement, and monitors health from the admin console. |
+| External open-banking recipient (machine persona) | Registers dynamically, consumes consented data under CSDF minimization, receives signed notifications. |
 | Platform operator | Installs the vertical once per tenant environment (enable three services); everything else is vertical-owned and automated. |
 | Integrator | Builds against the unified Rust SDK facade and typed contracts. |
 
@@ -212,12 +214,13 @@ platform trigger (event naming: `bank8:{service}:{resource}:{operation}`):
   (sign-up → products → teller delegation → deposit → consent → recipient
   data) without direct backend access.
 - **Latency:** synchronous posting path completes within interactive budget
-  (single Flow hop for orchestration; atomic ledger commit); FDX reads served
+  (single Flow hop for orchestration; atomic ledger commit); open-banking reads served
+ (by OpenFin8)
   from consent-checked single-pass middleware.
 - **Security:** zero token/credential exposure incidents; every M2M
   credential certificate-bound; every cross-tenant probe denied and audited.
 - **Compliance:** every domain mutation journaled (checksum-chained) and
-  audited; FDX certification evidence produced from real traffic.
+  audited; open-banking certification evidence produced from real traffic.
 - **Operability:** tenant enablement is one toggle per service; upgrades are
   rolling and zero-downtime (drain-gauged).
 
@@ -256,7 +259,7 @@ platform trigger (event naming: `bank8:{service}:{resource}:{operation}`):
 8. The vertical installs as a Debian package (`bank8` depending on
    `sentin8` + `sentin8-common`) and enrolls declaratively (
    `vertical enroll`).
-9. FDX certification evidence (contract, security, CSDF, operational tests +
+9. Open-banking certification evidence (contract, security, CSDF, operational tests +
    metrics) is produced and reviewable.
 10. Every capability in this document is covered by its unit's
     `BUSINESS.md` and exercised by tests or the E2E suite.
@@ -272,9 +275,9 @@ platform trigger (event naming: `bank8:{service}:{resource}:{operation}`):
   upload, simulator, mandates, standing orders, closure/freeze) extends the
   counter surface - where does counter scope end and admin-console scope
   begin? (BACKLOG ETA-5)
-- **FDX certification daily-rollup table + evidence admin page** are deferred
+- **Open-banking certification daily-rollup table + evidence admin page** are deferred
   until poll-volume scale demands them - what review volume triggers the
-  build? (fdx DESIGN.md §10)
+  build? (openfin8-core DESIGN.md §10)
 
 ---
 

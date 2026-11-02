@@ -98,7 +98,7 @@ sequenceDiagram
     P-->>U: instruction completed
 ```
 
-**Cross-service consent flow (FDX ↔ Ledger)**:
+**Cross-service consent flow (OpenFin8 ↔ Ledger)**:
 
 ```mermaid
 sequenceDiagram
@@ -113,7 +113,7 @@ sequenceDiagram
     F->>F: consent middleware + CSDF
     F->>L: account read (public API, provider env)
     L-->>F: account row
-    F-->>R: minimized FDX payload
+    F-->>R: minimized payload (CSDF)
 ```
 
 **Env-init (event-driven per-tenant seeding)**:
@@ -147,11 +147,11 @@ erDiagram
     SCHEMA_PAYMENTS ||--|{ TBL_PAYMENTS : "domain tables (55, unprefixed)"
     SCHEMA_PAYMENTS ||--|{ PROD2 : "payments.outbox + payments.audit_journal"
     SCHEMA_OPEN_CA ||--|{ TBL_OPEN_CA : "domain tables (15, unprefixed)"
-    SCHEMA_OPEN_CA ||--|{ PROD3 : "fdx.outbox + fdx.audit_journal"
+    SCHEMA_OPEN_CA ||--|{ PROD3 : "outbox + audit journal (openfin8_ca schema)"
 ```
 
 - **Schema-per-service**: each service's schema is its primary domain
-  schema - `ledger.accounts`, `payments.instructions`, `fdx.consents`,
+  schema - `ledger.accounts`, `payments.instructions`, the openfin8 consent tables,
   … - and also carries the producer tables (`{leaf}.outbox`,
   `{leaf}.audit_journal`). Table names carry NO `{svc}_` prefix - the
   schema itself namespaces them (a table name must never start with
@@ -159,11 +159,12 @@ erDiagram
   resolve via the role search_path; no shared vertical-wide schema
   exists.
 - **Ownership**: ledger owns schema `ledger`, payments owns schema
-  `payments`, fdx owns schema `fdx` - cross-service reads go through
+  `payments`; open banking belongs to the OpenFin8 vertical's own database.
+  Cross-service reads go through
   public APIs, never table grants (a cross-service grant is a defect);
   each role is granted exactly its own schema.
 - **Roles**: `bank8_ledger_service`, `bank8_payments_service` (shared
-  by payments + worker), `bank8_fdx_service` - NOBYPASSRLS, DSNs
+  by payments + worker), the OpenFin8 services hold their own NOBYPASSRLS roles and DSNs
   `postgres://{role}@…/bank8`, search_path `{leaf}, public`
   (the `vertical enroll` default - no vertical-wide schema segment).
 - **Producer tables**: `{leaf}.outbox` (NOTIFY `{leaf}_outbox_changed`)
@@ -193,10 +194,10 @@ service (see each DESIGN.md §4). The vertical's external contract is:
 
 | Surface | Path prefix | Consumers |
 |---|---|---|
-| Ledger API | `/proxy/ledger/v1/*` | ebank, eteller, admin, fdx (internal), payments (posting steps) |
+| Ledger API | `/proxy/ledger/v1/*` | ebank, eteller, admin, open banking (OpenFin8 internal), payments (posting steps) |
 | Payments API | `/proxy/payments/v1/*` (+`v1beta`) | ebank, eteller, admin |
-| FDX provider API | `/fdx/v6/*` | external data recipients |
-| FDX recipient/consent | `/proxy/fdx/v1/*`, `/v1/recipient/*`, `/v1/auth/consent/*` | openfin8-eopenca (recipient app), auth-ui consent host |
+| Open-banking provider API (OpenFin8 vertical) | `/fdx/v6/*` (served by `openfin8-ca/us/uk/eu`) | external data recipients |
+| Open-banking recipient/consent | `/proxy/openfin8-ca/v1/*`, `/v1/recipient/*`, `/v1/auth/consent/*` | openfin8-eopenca (recipient app), auth-ui consent host |
 
 **Event families** (the vertical's complete Bus surface):
 
@@ -204,8 +205,8 @@ service (see each DESIGN.md §4). The vertical's external contract is:
 |---|---|---|---|
 | `ledger` | ledger | `bus:{env}:ledger` | payments (posting callbacks), AI fraud-scan trigger (registered), e2e |
 | `payments` | payments | `bus:{env}:payments` | embedded worker (instruction re-drive) |
-| `fdx` | fdx | `bus:{env}:fdx` | notification worker, e2e |
-| `sys` (platform) | consumed | `bus:{env}:sys` | ledger/fdx env-init consumers |
+
+| `sys` (platform) | consumed | `bus:{env}:sys` | ledger and the OpenFin8 services' env-init consumers |
 
 **Vertical registration** (`vertical-registry.json` +
 `--print-registration`): services ×3 (the re-drive worker is embedded in
@@ -223,8 +224,9 @@ apps ×4, and per-service `admin_scopes`/`policies`/`m2m_grants`/`pg_roles`/
   `WHERE env_id` clauses; holder scoping on customer-held tables.
 - **M2M**: certificate identity per workload (`ledger`,
   `payments-worker` + `payments-worker-flow` (the embedded worker's
-  consume/re-drive sources), `fdx`, `{leaf}-policy`, `{leaf}-audit`) -
-  declared grants in each service's `m2m_grants` section.
+  consume/re-drive sources), `{leaf}-policy`, `{leaf}-audit`) -
+  declared grants in each service's `m2m_grants` section (the OpenFin8
+  services declare their own workloads in the openfin8 vertical).
 - **Audit**: local journal → Sys pusher; domain audit tables per
   service.
 - **Idempotency**: posting/instruction `(env_id, idempotency_key)`
@@ -270,7 +272,7 @@ idempotent seeds.
 - No bank8 service ever writes another service's tables - cross-flow
   goes through public APIs or Bus events.
 - Each service's role is granted exactly its own schema - one schema
-  per service (`ledger`, `payments`, `fdx`); no shared vertical-wide
+  per service (`ledger`, `payments`); no shared vertical-wide
   schema exists.
 - No bank8 table exists outside the `bank8` database; no platform
   table outside `db sentin8` (except the registry reads granted at
@@ -318,16 +320,17 @@ graph TD
   by design - the vertical ships a runbook, not the certification
   (payments DESIGN.md §10).
 - Cross-request caches are scoped by caller: the ledger posting money
-  path stays transactional; `viewEffective` and the FDX certification
-  metrics serve from bounded TTL caches (ledger/fdx DESIGN.md §10).
+  path stays transactional; `viewEffective` and the open-banking
+  certification metrics serve from bounded TTL caches (ledger
+  DESIGN.md §10; the open-banking caches live in the OpenFin8 vertical).
 - The worker's stream env binding - its workload identity defaults to the system
   env while producer events land on per-tenant streams - stays open with
   the platform Bus team (payments DESIGN.md §10 - embedded worker). Its
   in-process fixes (per-event tenant context, correlation-filtered lookup,
   M2M Flow token source) are implemented - BACKLOG WKR-ST1/WKR-TX1.
-- FDX mutation handlers' same-transaction tenant-context discipline is
-  landed in the core consent/integration paths; the remaining bare-pool
-  sibling writes are BACKLOG FDX-RLS1.
+- The open-banking mutation handlers' same-transaction tenant-context
+  discipline is landed in the (OpenFin8) core consent/integration
+  paths.
 - The business-feature catalogs of the historical functional designs inform
   the per-unit `BUSINESS.md`s; implemented-vs-functional deltas are tracked
   as open stories in `BACKLOG.md` (e.g. eTeller page set 2, ETA-5).
