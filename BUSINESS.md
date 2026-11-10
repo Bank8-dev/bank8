@@ -40,7 +40,7 @@
 
 | # | Capability block | What the business gets | Delivered by |
 |---|---|---|---|
-| 1 | Core banking | Customer registry; customer + internal accounts; 13 product types as configurable data; double-entry postings; 3-D balances; scheduled jobs; statements; checksum-chained journal | Bank8:Ledger |
+| 1 | Core banking | Customer registry; customer + internal accounts; an open product factory - any financial product is creatable as data (a free-form type + parameters + validation modules, no fixed catalog); double-entry postings; 3-D balances; scheduled jobs; statements; checksum-chained journal | Bank8:Ledger |
 | 2 | Payment orchestration | Instructions, scheme flows (B8 on-us, SEPA, TIPS, SWIFT AGI on ISO 20022), card issuing/lifecycle/3DS, mandates, payees, routing catalogue, versioned rules, payment files, manual decisions, recurring payments, sandbox simulators | Bank8:Payments |
 | 3 | Open banking | FDX v6.5 provider APIs, consent lifecycle + enforcement, CSDF data minimization, recipient registration (DDCR/DDPM), HMAC-signed notifications, certification metrics | OpenFin8:CA |
 | 4 | Regulatory reporting | Jurisdiction registry as runtime data; filing calendar; return generation + XBRL/CSV packaging; submission/amendment lifecycle; AML/CTF filing (STR/SAR/CTR/EFTR/LCTR) - the vertical's single filing executor | Bank8:Reporting |
@@ -134,7 +134,7 @@ Product changes are deployments of data, not engineering releases.
 
 | App | Persona | Capability rules |
 |---|---|---|
-| ebank | Retail customer | Self-service onboarding, account opening (13 product types), transfers (idempotent by construction), statements via signed URLs, consent view/revoke; no credential ever reaches the client. |
+| ebank | Retail customer | Self-service onboarding, account opening (any active ledger product - the catalog is data, not an enum), transfers (idempotent by construction), statements via signed URLs, consent view/revoke; no credential ever reaches the client. |
 | eteller | Branch teller | Customer search/onboarding run on the staff token; all customer operations ride customer-approved CIBA delegation (`act` = teller), time-boxed and audited; internal accounts resolve staff-only. |
 | admin | Bank staff | One console for the whole vertical: services' RFW admin pages, service health, per-environment service enablement; every mutation admin-scoped and audited upstream. |
 
