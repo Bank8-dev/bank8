@@ -82,7 +82,7 @@ graph TD
     subgraph vertical["bank8 vertical"]
         LEDGER["Bank8:Ledger<br/>(core ledger)"]
         PAY["Bank8:Payments<br/>(orchestration + embedded re-drive worker)"]
-        FDX["OpenFin8:CA<br/>(open banking)"]
+        FDX["OpenFin8<br/>(open banking)"]
         RPT["Bank8:Reporting<br/>(filing calendar + embedded filing worker)"]
         RSK["Bank8:Risk<br/>(measurement + embedded measure worker)"]
         CMP["Bank8:Compliance<br/>(AML/CTF + embedded screening worker)"]

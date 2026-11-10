@@ -27,7 +27,7 @@ graph TD
         subgraph bank8["bank8/ (this vertical)"]
             LEDGER["Bank8:Ledger"]
             PAY["Bank8:Payments<br/>(incl. embedded re-drive worker)"]
-            FDX["OpenFin8:CA"]
+            FDX["OpenFin8"]
             RPT["Bank8:Reporting<br/>(filing executor + embedded filing worker)"]
             RSK["Bank8:Risk<br/>(measurement + embedded measure worker)"]
             CMP["Bank8:Compliance<br/>(AML/CTF + embedded screening worker)"]
@@ -103,7 +103,7 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
     participant R as Data recipient
-    participant F as OpenFin8:CA
+    participant F as OpenFin8
     participant A as Sentin8:Auth
     participant L as Bank8:Ledger
     R->>F: consent start (PAR/PKCE)
@@ -123,7 +123,7 @@ sequenceDiagram
     participant S as Sentin8:Sys
     participant B as Sentin8:Bus (sys family)
     participant L as Bank8:Ledger
-    participant F as OpenFin8:CA
+    participant F as OpenFin8
     S->>B: sentin8:sys:service:updated {enabled}
     B-->>L: SSE consumer (group bank8-ledger-envinit)
     L->>L: seed internal accounts (idempotent)
