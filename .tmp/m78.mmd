@@ -1,0 +1,16 @@
+sequenceDiagram
+    participant C as Sentin8:Cron
+    participant F as Sentin8:Flow
+    participant R as Bank8:Reporting
+    participant L as Bank8:Ledger
+    participant S as Sentin8:Storage
+    participant B as Sentin8:Bus
+    C->>R: trigger due return (M2M)
+    R->>F: create filing workflow (correlation = run id)
+    R->>R: generate (idempotent per return+period)
+    R->>L: read balances/exposures (public API)
+    R->>S: store packaged XBRL/CSV artifact
+    R->>B: return:generated (reporting.outbox)
+    R->>B: filing:submitted
+    B-->>F: SSE resume
+    F->>R: POST /v1/internal/steps/execute (acknowledge)

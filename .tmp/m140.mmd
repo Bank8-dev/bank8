@@ -1,0 +1,8 @@
+flowchart TD
+    A[posting event] --> B{deduped?}
+    B -->|already seen| C[skip]
+    B -->|new| D[update exposure]
+    D --> E{breach?}
+    E -->|no| F[done]
+    E -->|yes| G[emit limit:breached + journal]
+    H[worker crash] --> I[replay from Valkey stream + idempotency key]

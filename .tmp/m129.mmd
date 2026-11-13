@@ -1,0 +1,20 @@
+graph TD
+    subgraph platform["Sentin8 platform"]
+        AUTH["Sentin8:Auth"]
+        BUS["Sentin8:Bus"]
+        FUNC["Sentin8:Func"]
+    end
+    subgraph vertical["bank8 vertical"]
+        CMP["Bank8:Compliance<br/>(API + embedded screening worker)"]
+        LEDGER["Bank8:Ledger"]
+        PAY["Bank8:Payments"]
+        RPT["Bank8:Reporting"]
+        PG[("bank8 database")]
+    end
+    PAY -->|"instruction:created"| BUS
+    LEDGER -->|"customer:created / posting"| BUS
+    BUS -->|"SSE consume"| CMP
+    CMP -->|"suspicious:detected"| RPT
+    CMP -->|"alert/case events"| BUS
+    FUNC -->|"hook results"| CMP
+    CMP <-->|"schema compliance"| PG

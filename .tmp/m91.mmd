@@ -1,0 +1,23 @@
+graph TD
+    subgraph apps["Flutter apps"]
+        EB["ebank (customer)"]
+        EF["eOpenCA (moved to openfin8.dev)"]
+        ET["eteller (staff)"]
+        AD["admin (staff)"]
+    end
+    subgraph vertical["bank8 vertical"]
+        LEDGER["Bank8:Ledger"]
+        PAY["Bank8:Payments"]
+        FDX["OpenFin8"]
+        RPT["Bank8:Reporting"]
+        RSK["Bank8:Risk"]
+        CMP["Bank8:Compliance"]
+    end
+    EB & EF & ET & AD -->|"via Sentin8:BFF"| vertical
+    LEDGER -->|"hooks: pre/post_posting · scheduled"| FUNC["Sentin8:Func (WASM)"]
+    PAY -->|"instruction logics"| FUNC
+    FUNC -->|"host calls · proxy-back"| LEDGER
+    PAY -->|"postings"| LEDGER
+    FDX -->|"consent-checked reads"| LEDGER & PAY
+    CMP -->|"suspicious:detected"| RPT
+    RSK -->|"limit:breached"| CMP

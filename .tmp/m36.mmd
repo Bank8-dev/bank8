@@ -1,0 +1,39 @@
+graph TD
+    subgraph L["API layer"]
+        RT["server.rs router (190 routes)"]
+        MW["auth.rs verify + policy.rs require"]
+    end
+    subgraph D["Domain"]
+        IN["instructions / state_machine"]
+        FL["scheme flows (b8, sepa, tips, swift)"]
+        CD["cards / 3DS / mdes / visa_dps"]
+        MD["mandates / payees"]
+        RE["rules engine + versions"]
+        FP["files / batches / CLU"]
+        TS["tasks / manual decisions"]
+    end
+    subgraph WK["Embedded re-drive worker (worker/)"]
+        SSE["sse_consume_loop<br/>family payments, group payments-worker"]
+        PR["process_instruction<br/>terminal-skip + guarded UPDATE<br/>+ Flow resume/retry"]
+    end
+    subgraph S["Storage"]
+        PG[("schema payments: payments_*")]
+        OB[("payments.outbox")]
+        AJ[("payments.audit_journal")]
+    end
+    subgraph X["External calls"]
+        FLW["Flow client (cert-presenting payments-worker-flow)"]
+        LED["Ledger client"]
+        STO["Storage client"]
+        BUSC["Bus client (cert-presenting payments-worker, consume)"]
+    end
+    RT --> MW --> D
+    D --> PG
+    D -- "same-tx" --> OB
+    D -- "same-tx" --> AJ
+    D --> FLW
+    D --> LED
+    FP --> STO
+    SSE --> PR --> PG
+    PR --> FLW
+    SSE --> BUSC

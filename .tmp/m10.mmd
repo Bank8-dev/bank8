@@ -1,0 +1,3 @@
+graph TD
+    U["Unit - per service<br/>modules/state machines/ISO parsing/<br/>CSDF/configs (bank8 total ~800)"] --> I["Integration - per service<br/>policy suites, handler tests,<br/>registration output checks"]
+    I --> E["E2E - bank8-e2e<br/>UI + BFF proxy only<br/>(no direct DB/psql)"]

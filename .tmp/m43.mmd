@@ -1,0 +1,16 @@
+graph TD
+    B[Staff browser] --> M[main.dart bootstrap]
+    M --> RC[fetchRuntimeContext - own origin, fail-closed]
+    M --> C[AdminContext - singleton app state]
+    C --> S[AdminServices - six BFF ApiClients]
+
+    subgraph SGlu75s1["Via Sentin8:BFF - staff session cookie, tokens server-side"]
+        S --> RFW["GET /v1/admin/ui/{page} - RFW definitions"]
+        S --> LED[bank8-ledger admin data APIs]
+        S --> PAY[bank8-payments admin data APIs]
+        S --> F[OpenFin8 admin data APIs]
+        S --> SYS[Sentin8:Sys service enablement]
+        S --> D[db]
+        S --> ST[storage]
+        S --> PO[post]
+    end

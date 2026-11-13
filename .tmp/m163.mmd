@@ -1,0 +1,8 @@
+graph TD
+    subgraph "bank8 vertical"
+        SVC["Bank8:Ledger service<br/>(serializes responses)"]
+        SDK["bank8 SDK ledger client<br/>(deserializes responses)"]
+    end
+    CT["bank8-ledger-contracts<br/>Account · Balance"]
+    SVC -- "serde Serialize" --> CT
+    SDK -- "serde Deserialize" --> CT

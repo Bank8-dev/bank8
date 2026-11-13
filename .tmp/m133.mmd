@@ -1,0 +1,11 @@
+flowchart TD
+    A[instruction event] --> B{deduped?}
+    B -->|seen| C[skip]
+    B -->|new| D[screen + monitor]
+    D --> E{hit / rule fired?}
+    E -->|no| F[done]
+    E -->|yes| G[raise alert]
+    G --> H{escalate?}
+    H -->|yes| I[open case + suspicious:detected → Reporting]
+    H -->|no| J[queue for review]
+    K[worker crash] --> L[replay stream + idempotency key]

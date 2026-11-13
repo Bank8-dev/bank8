@@ -1,0 +1,13 @@
+graph TD
+    subgraph Pillars
+        P1["I - Post-Quantum Cryptography<br/>X25519MLKEM768 + ML-DSA-65 + SLH-DSA root"]
+        P2["II - Single Identity Plane<br/>one issuer, one JWKS, token families"]
+        P3["III - Shield Live Authorization<br/>RBAC + ABAC + ReBAC, roles resolved per request"]
+        P4["IV - Mandatory Tenant Isolation<br/>FORCE RLS, per-service PG roles, no BYPASSRLS"]
+        P5["V - Certificate-Only Workload Identity<br/>CN=m2m-{workload}, zero static secrets"]
+    end
+    P1 --> E["Every request:<br/>authenticated, authorized,<br/>tenant-scoped, audited"]
+    P2 --> E
+    P3 --> E
+    P4 --> E
+    P5 --> E

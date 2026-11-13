@@ -1,0 +1,31 @@
+graph TD
+    subgraph repo["repo root"]
+        ROOT["start-platform.sh"]
+        subgraph sentin8["sentin8/ platform"]
+            CLI["sentin8-cli<br/>vertical init · enroll"]
+            CAPT["Sentin8:Captain"]
+            SVC["18 platform services"]
+        end
+        subgraph bank8["bank8/ (this vertical)"]
+            LEDGER["Bank8:Ledger"]
+            PAY["Bank8:Payments<br/>(incl. embedded re-drive worker)"]
+            FDX["OpenFin8"]
+            RPT["Bank8:Reporting<br/>(filing executor + embedded filing worker)"]
+            RSK["Bank8:Risk<br/>(measurement + embedded measure worker)"]
+            CMP["Bank8:Compliance<br/>(AML/CTF + embedded screening worker)"]
+            APPS["4 Flutter apps"]
+            SDK["sdk/rust/bank8 +<br/>crates/*/contracts"]
+            PG[("bank8 database<br/>schemas: ledger · payments · open_ca ·<br/>reporting · risk · compliance")]
+        end
+    end
+    ROOT --> CAPT --> SVC
+    CLI -->|"creates database + applies init.sql"| PG
+    CLI -->|"registers services/scopes/triggers/apps"| SVC
+    CAPT -->|"spawns + health-probes + upgrades"| LEDGER
+    CAPT --> PAY
+    CAPT --> FDX
+    CAPT --> RPT
+    CAPT --> RSK
+    CAPT --> CMP
+    LEDGER & PAY & FDX & RPT & RSK & CMP <--> PG
+    APPS -->|"BFF proxy"| SVC

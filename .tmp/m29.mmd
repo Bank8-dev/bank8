@@ -1,0 +1,53 @@
+erDiagram
+    RISK_LIMIT ||--o{ LIMIT_BREACH : "crossed by"
+    EXPOSURE ||--o{ LIMIT_BREACH : "triggers"
+    CAPITAL_COMPONENT ||--o{ CAPITAL_RATIO : "feeds"
+    LIQUIDITY_BUFFER ||--o{ LCR_NSFR : "feeds"
+    CREDIT_STAGE ||--o{ ECL_MODEL : "drives"
+    STRESS_SCENARIO ||--o{ STRESS_RESULT : "produces"
+
+    RISK_LIMIT {
+        uuid id PK
+        text env_id
+        text limit_type
+        numeric threshold
+        text status
+    }
+    EXPOSURE {
+        uuid id PK
+        text env_id
+        text dimension
+        numeric amount
+        text currency
+    }
+    LIMIT_BREACH {
+        uuid id PK
+        uuid limit_id FK
+        uuid exposure_id FK
+        numeric actual
+        timestamp breached_at
+    }
+    CAPITAL_COMPONENT {
+        uuid id PK
+        text env_id
+        text tier
+        numeric amount
+    }
+    LIQUIDITY_BUFFER {
+        uuid id PK
+        text env_id
+        text asset_class
+        numeric amount
+    }
+    ECL_MODEL {
+        uuid id PK
+        text env_id
+        text stage
+        numeric ecl
+    }
+    STRESS_SCENARIO {
+        uuid id PK
+        text env_id
+        text name
+        jsonb assumptions
+    }

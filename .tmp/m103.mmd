@@ -1,0 +1,16 @@
+sequenceDiagram
+    participant P as eBank page
+    participant H as AccountsHook / BalancesHook
+    participant B as BffApiClient
+    participant F as Sentin8:BFF
+    participant L as Bank8:Ledger
+    P->>H: widget build (dashboard / detail)
+    H->>B: GET proxy/bank8-ledger/v1/accounts
+    B->>F: HTTPS GET /proxy/bank8-ledger/v1/accounts (Cookie + X-BFF-CSRF + x-sentin8-correlation-id)
+    F->>F: session lookup, CSRF check, scope gate, token attach
+    F->>L: GET /v1/accounts (Bearer customer token)
+    L-->>F: balances + accounts (RLS-scoped)
+    F-->>B: 200 JSON
+    B-->>H: decoded DTOs
+    H-->>P: DataState.data
+    note over F,L: 401/403 on expired session or scope gap - hook surfaces error frame

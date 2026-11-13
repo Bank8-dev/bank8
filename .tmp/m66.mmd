@@ -1,0 +1,27 @@
+sequenceDiagram
+    participant C as Client (BFF /proxy/ledger/v1/postings)
+    participant L as Bank8:Ledger
+    participant P as Shield engine (step 5)
+    participant DB as PostgreSQL (bank8)
+    participant R as outbox relay
+    participant B as Sentin8:Bus
+    C->>L: POST /v1/postings (bearer user token)
+    L->>L: verify token (issuer/JWKS/expiry/type)
+    L->>L: resolve env (token claims / X-Sentin8-Env-Id)
+    L->>P: EvalTarget bank8:ledger:postings:write
+    P-->>L: ALLOW (live-resolved roles)
+    L->>DB: BEGIN + set_tenant_context(env)
+    L->>DB: idempotency ON CONFLICT check
+    L->>DB: check_double_entry + module validation
+    alt validation fails
+        L-->>C: 422 (no rows written)
+    end
+    L->>DB: postings + instructions + balances + transactions
+    L->>DB: audit_events (errors propagate)
+    L->>DB: ledger.outbox insert (errors propagate)
+    L->>DB: COMMIT
+    L-->>C: 200 posting response + balances
+    R->>DB: drain unrelayed outbox row
+    R->>B: POST /v1/produce (M2M, idempotency_key = row id)
+    B-->>R: 2xx → mark relayed
+    Note over R,B: Bus outage → row stays, relay retries (≤10 attempts)

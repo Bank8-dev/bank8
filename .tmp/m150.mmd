@@ -1,0 +1,14 @@
+graph LR
+    subgraph create["Create any product (data, not code)"]
+        T["product_type<br/>(free-form label - no enum)"]
+        P["parameters JSONB<br/>(template/instance/derived)"]
+        M["modules list<br/>(14 built-in validators)"]
+        W["WASM hook registry<br/>(per version, optional)"]
+    end
+    subgraph ledger["One unified ledger"]
+        ACC["accounts<br/>(3-D balances: denomination · address · phase)"]
+        POST["double-entry postings"]
+        IN["invariants:<br/>balanced · idempotent · audited · RLS"]
+    end
+    T & P & M & W --> PRODUCT["product (row)"]
+    PRODUCT --> ACC --> POST --> IN

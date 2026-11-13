@@ -1,0 +1,16 @@
+sequenceDiagram
+    participant H as handler (domain tx)
+    participant O as ledger.outbox
+    participant R as shell relay
+    participant B as Sentin8:Bus
+    H->>O: INSERT same-tx (idempotency = row id)
+    Note over H,O: posting path: ? propagation - emit failure aborts
+    O-->>R: NOTIFY ledger_outbox_changed
+    R->>O: drain WHERE relayed = false AND attempts < 10
+    R->>B: POST /v1/produce (M2M sentin8:bus:produce)
+    alt 2xx
+        R->>O: mark relayed
+    else failure
+        R->>O: attempts+1 (retry budget)
+        Note over R,O: exhausted → stays for manual replay
+    end

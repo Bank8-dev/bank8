@@ -1,0 +1,9 @@
+flowchart TD
+    A[Generation fails] --> B{retry < max?}
+    B -->|yes| C[exponential backoff]
+    C --> A
+    B -->|no| D[DLQ + admin triage]
+    E[Submission rejected] --> F[amendment workflow]
+    F --> G[resubmit]
+    G --> E
+    H[Regulator outage] --> I[staged artifact + resubmit on ack]

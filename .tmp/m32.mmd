@@ -1,0 +1,24 @@
+graph TD
+    subgraph "Sentin8 platform"
+        FLOW["Sentin8:Flow<br/>(workflow steps)"]
+        FUNC["Sentin8:Func"]
+        CRON["Sentin8:Cron"]
+        BUS["Sentin8:Bus"]
+        STAT["Sentin8:Stat"]
+    end
+    subgraph "bank8 vertical"
+        PAY["Bank8:Payments<br/>(API + embedded worker)"]
+        WKR["worker/mod.rs<br/>(SSE consume + re-drive)"]
+        LEDGER["Bank8:Ledger"]
+        PG[("bank8 database<br/>schema payments: payments_* · payments.outbox")]
+    end
+    subgraph clients
+        BFF["Sentin8:BFF /proxy/payments/*"]
+    end
+    BFF -- "user tokens /v1/*" --> PAY
+    PAY -- "create workflows / register step profiles" --> FLOW
+    FLOW -- "M2M proxy-back /v1/internal/steps/execute" --> PAY
+    WKR -- "resumes workflows" --> FLOW
+    PAY -- "posting via public API" --> LEDGER
+    PAY -- "outbox → relay" --> BUS
+    PAY -- "telemetry" --> STAT

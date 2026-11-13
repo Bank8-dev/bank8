@@ -1,0 +1,12 @@
+sequenceDiagram
+    participant P as Bank8:Payments
+    participant B as Sentin8:Bus
+    participant C as Bank8:Compliance
+    participant R as Bank8:Reporting
+    P->>B: instruction:created (full snapshot)
+    B-->>C: SSE consume
+    C->>C: sanctions screen + monitoring rules
+    C->>B: alert:created (compliance.outbox)
+    C->>C: escalate to case (actor claim)
+    C->>B: suspicious:detected
+    B-->>R: file STR/SAR/CTR

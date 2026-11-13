@@ -1,0 +1,13 @@
+sequenceDiagram
+    participant R as Data recipient
+    participant F as OpenFin8
+    participant A as Sentin8:Auth
+    participant L as Bank8:Ledger
+    R->>F: consent start (PAR/PKCE)
+    F->>A: certificate identity + authorization (hosted consent RFW)
+    A-->>R: consent grant (openfin8:ca:consent:created event)
+    R->>F: GET /fdx/v6/accounts (recipient token)
+    F->>F: consent middleware + CSDF
+    F->>L: account read (public API, provider env)
+    L-->>F: account row
+    F-->>R: minimized payload (CSDF)

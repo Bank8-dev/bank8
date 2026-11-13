@@ -1,0 +1,19 @@
+graph TD
+    subgraph shell["sentin8-shell boot"]
+        POOL["capped PgPool"]
+        ENG["Shield engine<br/>boot_full"]
+        RELAY["outbox relay<br/>ledger_outbox_changed"]
+        JP["journal pusher<br/>ledger-audit M2M"]
+    end
+    subgraph state["build_state"]
+        CFG["LedgerConfig<br/>+ m2m_source"]
+        BUSC["BusClient<br/>build_with_dcr ledger"]
+        AS["AppState<br/>(cfg, pool, engine, bus, admin)"]
+    end
+    subgraph tasks["service-spawned tasks"]
+        EVCON["event_consumer<br/>sys family SSE"]
+    end
+    POOL --> AS
+    ENG --> AS
+    BUSC --> AS
+    EVCON --> BUSC

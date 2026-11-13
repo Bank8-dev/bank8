@@ -1,0 +1,5 @@
+graph TD
+    E2E[Playwright E2E over real BFF] --> INT[Integration: hook→service flows]
+    INT --> CT[Contract: proxy paths + scope manifest]
+    INT --> WT[Widget: pages, branding, fallbacks]
+    WT --> SEC[Security guards: ci-guards.sh]

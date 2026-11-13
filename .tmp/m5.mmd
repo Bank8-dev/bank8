@@ -1,0 +1,20 @@
+sequenceDiagram
+    participant U as User (app/BFF)
+    participant P as Bank8:Payments
+    participant F as Sentin8:Flow
+    participant W as payments embedded worker
+    participant L as Bank8:Ledger
+    participant B as Sentin8:Bus
+    U->>P: POST /v1/instructions
+    P->>P: Shield gate + idempotency
+    P->>F: create workflow (correlation = instruction id)
+    P->>B: instruction:created (payments.outbox → relay)
+    B-->>W: SSE push
+    W->>F: resume workflow
+    F->>P: POST /v1/internal/steps/execute (M2M)
+    P->>L: POST /v1/postings (public API - never tables)
+    L->>B: posting:created (ledger.outbox → relay)
+    L-->>P: posting id
+    P->>P: step results + guarded state transition
+    P->>B: instruction:updated
+    P-->>U: instruction completed

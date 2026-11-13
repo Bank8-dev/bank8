@@ -1,0 +1,29 @@
+graph TD
+    subgraph platform["Sentin8 platform"]
+        AUTH["Sentin8:Auth"]
+        CRON["Sentin8:Cron"]
+        FLOW["Sentin8:Flow"]
+        STOR["Sentin8:Storage"]
+        BUS["Sentin8:Bus"]
+    end
+    subgraph vertical["bank8 vertical"]
+        RPT["Bank8:Reporting<br/>(API + embedded filing worker)"]
+        LEDGER["Bank8:Ledger"]
+        RSK["Bank8:Risk"]
+        CMP["Bank8:Compliance"]
+        PG[("bank8 database")]
+    end
+    subgraph clients
+        BFF["Sentin8:BFF /proxy/reporting/*"]
+        ADM["apps/admin"]
+    end
+    ADM --> BFF -->|"user tokens"| RPT
+    RPT <-->|"verify / DCR"| AUTH
+    CRON -->|"M2M / internal filing triggers"| RPT
+    FLOW -->|"M2M / internal steps"| RPT
+    RPT -->|"public API reads"| LEDGER
+    RPT -->|"risk/breach inputs (public API)"| RSK
+    CMP -->|"detected STR/SAR/CTR → file"| RPT
+    RPT -->|"artifacts"| STOR
+    RPT -->|"reporting.outbox relay"| BUS
+    RPT <-->|"schema reporting"| PG

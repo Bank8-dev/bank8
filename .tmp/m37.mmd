@@ -1,0 +1,26 @@
+sequenceDiagram
+    participant C as Client (BFF)
+    participant P as Bank8:Payments
+    participant SH as Shield (step 5)
+    participant DB as PostgreSQL
+    participant F as Sentin8:Flow
+    participant L as Bank8:Ledger
+    C->>P: POST /v1/instructions (bearer)
+    P->>SH: EvalTarget bank8:payments:instructions:write
+    SH-->>P: ALLOW
+    P->>DB: BEGIN + tenant context + idempotency check
+    P->>DB: INSERT instructions (pending)
+    P->>DB: INSERT payments.outbox (event: instruction:created)
+    P->>F: create workflow (logic_id, correlation = instruction id)
+    alt workflow created
+        P->>DB: instruction → processing · COMMIT
+        P-->>C: accepted
+    else Flow unavailable
+        P-->>C: 5xx - nothing committed
+    end
+    Note over C,L: Flow drives steps, posting steps call Ledger public API
+    F->>P: POST /v1/internal/steps/execute (M2M)
+    P->>SH: step gate (payments enforced set)
+    P->>L: POST /v1/postings (M2M/steps)
+    L-->>P: posting id
+    P->>DB: step_results + state transition (guarded)

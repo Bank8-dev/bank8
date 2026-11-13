@@ -1,0 +1,10 @@
+graph TD
+    APP["Consumers<br/>(apps, e2e, services)"] -->|"use bank8::ledger::…"| F["bank8 facade"]
+    subgraph F["bank8 facade (sdk/rust/bank8)"]
+        L["bank8::ledger<br/>LedgerClient + contracts"]
+        P["bank8::payments<br/>PaymentsClient + contracts"]
+    end
+    L --> LC["bank8-ledger-contracts"]
+    P --> PC["bank8-payments-contracts"]
+    L -- "HTTPS /v1/*" --> LSVC["Bank8:Ledger service"]
+    P -- "HTTPS /v1/*" --> PSVC["Bank8:Payments service"]

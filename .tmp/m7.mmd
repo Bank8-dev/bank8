@@ -1,0 +1,11 @@
+sequenceDiagram
+    participant S as Sentin8:Sys
+    participant B as Sentin8:Bus (sys family)
+    participant L as Bank8:Ledger
+    participant F as OpenFin8
+    S->>B: sentin8:sys:service:updated {enabled}
+    B-->>L: SSE consumer (group bank8-ledger-envinit)
+    L->>L: seed internal accounts (idempotent)
+    B-->>F: SSE consumer (group openfin8-ca-envinit)
+    F->>F: auto-register provider profile
+    Note over L,F: platform emits, verticals self-init -<br/>zero vertical knowledge in sentin8

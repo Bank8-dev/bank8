@@ -1,0 +1,12 @@
+graph TD
+    B[Customer browser / mobile] --> EB[Bank8:eBank Flutter app]
+    ST[Staff browser] --> EB
+    EB -->|session cookie + CSRF| BFF[Sentin8:BFF bff domain]
+    BFF --> AUTH1[Sentin8:Auth]
+    BFF --> LED[Bank8:Ledger]
+    BFF --> PAY[Bank8:Payments]
+    BFF --> FDX["OpenFin8<br/>(open banking)"]
+    BFF --> DB[db]
+    BFF --> STG[storage]
+    BFF --> POST[post]
+    REC[External FDX recipients] --> FDX

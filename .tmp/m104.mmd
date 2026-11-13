@@ -1,0 +1,13 @@
+sequenceDiagram
+    participant P as TransferPage
+    participant S as EBankServices (ledger)
+    participant F as Sentin8:BFF
+    participant L as Bank8:Ledger
+    P->>S: postTransfer(debit, credit, amount)
+    S->>F: POST /proxy/bank8-ledger/v1/postings (batch_id, idempotency_key, instructions[transfer])
+    F->>L: POST /v1/postings (Bearer customer token)
+    L->>L: policy (Shield), RLS context, posting, outbox event
+    L-->>F: 201 posting batch
+    F-->>S: 201
+    S-->>P: receipt state
+    note over P,L: retry with same idempotency_key is safe (201/200 replay) - 4xx surfaces inline

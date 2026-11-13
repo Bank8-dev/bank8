@@ -1,0 +1,11 @@
+graph TD
+    ST[Staff browser] --> AD[Bank8:Admin Flutter app]
+    AD -->|staff session cookie + CSRF| BFF[Sentin8:BFF bff domain]
+    BFF -->|RFW definitions| LED[bank8-ledger]
+    BFF -->|admin data APIs| LED
+    BFF -->|RFW + admin data| PAY[bank8-payments]
+    BFF -->|RFW + admin data| FDX["OpenFin8<br/>(open banking)"]
+    BFF -->|service enablement| SYS[Sentin8:Sys]
+    BFF --> DB[db]
+    BFF --> STG[storage]
+    BFF --> POST[post]

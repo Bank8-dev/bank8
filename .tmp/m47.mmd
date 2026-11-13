@@ -1,0 +1,14 @@
+graph TD
+    subgraph SGxagl7s["Admin process (Flutter web)"]
+        MAIN[main.dart - bootstrap + dark theme] --> CTX[AdminContext singleton]
+        CTX --> SVC[AdminServices six BffApiClients]
+        CTX --> AUTH[AuthProvider - staff session]
+        SHELL[admin_shell - hash router + expandable sidebar] --> OV[OverviewPage - health cards]
+        SHELL --> SET[SettingsPage - sentin8 service enablement]
+        SHELL --> SECT[Ledger / Payments / Fdx section pages]
+        SHELL --> RFWDISPATCH[RFW fall-through for service admin routes]
+        RFWDISPATCH --> RFW[Bank8RfwPage → Sentin8RfwPage SDK renderer]
+        SECT --> SVC
+        OV --> SVC
+        SET --> SVC
+    end

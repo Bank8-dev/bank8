@@ -1,0 +1,10 @@
+graph TD
+    TB[Teller browser] --> ET[Bank8:eTeller Flutter app]
+    CB[Customer device - approval] -.approves.-> AUTH
+    ET -->|session cookie + CSRF| BFF[Sentin8:BFF bff domain]
+    BFF --> DEL[BFF delegate endpoints]
+    DEL --> AUTH[Sentin8:Auth]
+    BFF -->|delegated token, act=teller| LED[Bank8:Ledger customer operations]
+    BFF -->|delegated token| PAY[Bank8:Payments tasks + decisions]
+    BFF -->|staff token| LED2[Bank8:Ledger internal accounts + search]
+    ET -->|WebSocket wss - delegation updates| BFF

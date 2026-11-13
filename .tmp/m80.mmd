@@ -1,0 +1,28 @@
+graph TD
+    subgraph platform["Sentin8 platform"]
+        BUS["Sentin8:Bus"]
+        FUNC["Sentin8:Func<br/>(custom detection rules)"]
+        AUTH["Sentin8:Auth"]
+    end
+    subgraph vertical["bank8 vertical"]
+        CMP["Bank8:Compliance<br/>(API + embedded screening worker)"]
+        LEDGER["Bank8:Ledger"]
+        PAY["Bank8:Payments"]
+        RPT["Bank8:Reporting"]
+        JUR[("jurisdiction registry<br/>thresholds, watchlists")]
+        PG[("bank8 database<br/>schema compliance")]
+    end
+    subgraph clients
+        BFF["Sentin8:BFF /proxy/compliance/*"]
+        ADM["apps/admin (alert/case queues)"]
+    end
+    ADM --> BFF -->|"user tokens /v1/*"| CMP
+    CMP <-->|"verify tokens / certificate identity"| AUTH
+    PAY -->|"instruction:created events"| BUS
+    LEDGER -->|"customer:created / posting events"| BUS
+    BUS -->|"SSE consume"| CMP
+    CMP -->|"suspicious:detected → file"| RPT
+    CMP -->|"alert/case events"| BUS
+    FUNC -->|"custom detection hooks"| CMP
+    CMP -.-> JUR
+    CMP <-->|"schema compliance"| PG

@@ -1,0 +1,18 @@
+graph TD
+    subgraph L["API layer"]
+        RT["server.rs router"]
+        MW["auth.rs verify + policy.rs require"]
+    end
+    subgraph D["Domain"]
+        EX["exposures"]
+        CAP["capital / liquidity"]
+        ECL["IFRS 9 ECL"]
+        LIM["limits / breach"]
+        STR["stress scenarios"]
+    end
+    subgraph W["Worker"]
+        WKR["worker/mod.rs<br/>(SSE consume + incremental update)"]
+    end
+    RT --> MW --> EX & CAP & ECL & LIM & STR
+    WKR --> EX & ECL & LIM
+    EX & CAP & ECL & LIM & STR --> PG[("schema risk")]

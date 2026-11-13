@@ -1,0 +1,13 @@
+sequenceDiagram
+    participant H as handler (domain tx)
+    participant O as payments.outbox
+    participant R as shell relay
+    participant B as Sentin8:Bus
+    participant W as embedded worker
+    H->>O: emit_event_tx (same-tx, publisher token)
+    O-->>R: NOTIFY payments_outbox_changed
+    R->>B: POST /v1/produce (M2M, idempotency_key = row id)
+    B-->>W: SSE push bank8:payments:instruction:*
+    W->>W: terminal-state skip (idempotent)
+    W-->>B: ACK
+    Note over B,R: produce failure → attempts+1, ≤10, then manual replay

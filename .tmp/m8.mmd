@@ -1,0 +1,11 @@
+erDiagram
+    BANK8_DB["bank8 database"]
+    BANK8_DB ||--|| SCHEMA_LEDGER : "schema ledger"
+    BANK8_DB ||--|| SCHEMA_PAYMENTS : "schema payments"
+    BANK8_DB ||--|| SCHEMA_OPEN_CA : "schema open_ca"
+    SCHEMA_LEDGER ||--|{ TBL_LEDGER : "domain tables (44, unprefixed)"
+    SCHEMA_LEDGER ||--|{ PROD1 : "ledger.outbox + ledger.audit_journal"
+    SCHEMA_PAYMENTS ||--|{ TBL_PAYMENTS : "domain tables (55, unprefixed)"
+    SCHEMA_PAYMENTS ||--|{ PROD2 : "payments.outbox + payments.audit_journal"
+    SCHEMA_OPEN_CA ||--|{ TBL_OPEN_CA : "domain tables (15, unprefixed)"
+    SCHEMA_OPEN_CA ||--|{ PROD3 : "outbox + audit journal (openfin8_ca schema)"

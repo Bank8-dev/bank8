@@ -1,0 +1,9 @@
+stateDiagram-v2
+    [*] --> accepted : POST /v1/postings (ON CONFLICT → original)
+    accepted --> completed : all instructions applied
+    accepted --> rejected : validation failure (no rows)
+    accepted --> failed : instruction error
+    completed --> reversed : adjustment/reversal posting
+    rejected --> [*]
+    failed --> [*]
+    completed --> [*]

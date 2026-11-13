@@ -1,0 +1,29 @@
+graph TD
+    subgraph platform["Sentin8 platform (ops env, sys org)"]
+        AUTH["Sentin8:Auth"]
+        BUS["Sentin8:Bus"]
+        CRON["Sentin8:Cron"]
+        FUNC["Sentin8:Func"]
+        STAT["Sentin8:Stat"]
+        SYS["Sentin8:Sys"]
+    end
+    subgraph vertical["bank8 vertical"]
+        LEDGER["Bank8:Ledger"]
+        PAY["Bank8:Payments"]
+        FDX["OpenFin8"]
+        PG[("bank8 database")]
+    end
+    subgraph clients
+        BFF["Sentin8:BFF<br/>/proxy/ledger/*"]
+        APPS["ebank · eteller · admin apps"]
+    end
+    APPS --> BFF -->|"user tokens"| LEDGER
+    LEDGER <-->|"verify tokens / certificate identity (CERTFREE-4V)"| AUTH
+    LEDGER -->|"ledger.outbox → relay → POST /v1/produce"| BUS
+    BUS -->|"sys family: sentin8:sys:service:updated"| LEDGER
+    CRON -->|"M2M / POST /v1/internal/schedules/run"| LEDGER
+    FUNC -->|"M2M / POST /v1/internal/func-host"| LEDGER
+    LEDGER -->|"M2M / metric ingest"| STAT
+    PAY -->|"posting callbacks (consumer)"| BUS
+    FDX -->|"account reads via public API"| LEDGER
+    LEDGER <-->|"schema ledger: ledger_* + producer tables"| PG

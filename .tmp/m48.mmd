@@ -1,0 +1,18 @@
+sequenceDiagram
+    participant U as Staff
+    participant S as admin_shell
+    participant R as Bank8RfwPage (SDK Sentin8RfwPage)
+    participant F as Sentin8:BFF
+    participant L as bank8-ledger
+    U->>S: open /ledger/products
+    S->>R: dispatch (service=ledger, page=products)
+    R->>F: GET /proxy/bank8-ledger/v1/admin/ui/products (staff cookie + CSRF)
+    F->>L: GET /v1/admin/ui/products (Bearer staff token)
+    L-->>F: RFW definition (AdminUiResponse)
+    F-->>R: definition
+    R->>R: parse + render (cache unless extraProps)
+    U->>R: submit form / data action
+    R->>F: POST /proxy/bank8-ledger/v1/admin/{resource}
+    F->>L: POST /v1/admin/{resource} (Bearer staff token)
+    L-->>U: result + refreshed data (audited upstream)
+    note over F,L: non-staff or scope-gap = 403 from the service - console renders the error, never bypasses

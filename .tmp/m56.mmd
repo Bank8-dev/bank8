@@ -1,0 +1,11 @@
+graph TD
+    subgraph SG7gjsi4["eTeller process (Flutter web)"]
+        MAIN[main.dart - bootstrap + test bridge] --> CTX[ETellerContext inherited provider]
+        CTX --> SVC[ETellerServices staff + delegated registries]
+        CTX --> IAR[InternalAccountResolver staff-scoped cache]
+        CTX --> LOG[sessionLog client-side ledger of teller ops]
+        SHELL[eteller_shell - hash router + delegation lifecycle] --> PAGES[pages/*]
+        SHELL --> WS[BffWebSocket delegation updates]
+        SHELL --> RESTORE[Delegation restore loop on reload]
+        PAGES --> SVC
+    end

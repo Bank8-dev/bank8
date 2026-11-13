@@ -1,0 +1,14 @@
+sequenceDiagram
+    participant U as Staff
+    participant P as SettingsPage
+    participant F as Sentin8:BFF
+    participant SYS as Sentin8:Sys
+    U->>P: open /settings
+    P->>F: GET /proxy/sys/v1/modules/services?org_id=…&env_id=…
+    F->>SYS: GET /v1/modules/services (Bearer staff token)
+    SYS-->>P: enabled services for the env
+    U->>P: toggle a vertical service
+    P->>F: PUT /proxy/sys/v1/env/{env_id}/services
+    F->>SYS: PUT /v1/env/{env_id}/services
+    SYS-->>P: updated enablement (audited)
+    note over P,SYS: enablement drives per-tenant vertical initialization upstream

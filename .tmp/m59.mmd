@@ -1,0 +1,6 @@
+flowchart LR
+    OP[eTeller delegated posting] --> LEDX[Bank8:Ledger posting + outbox]
+    LEDX --> BUS[Sentin8:Bus stream]
+    BUS --> CON[downstream consumers - recon / statements]
+    DEC[Payments task / decision flow] --> WS[BFF WebSocket]
+    WS -->|delegation + task updates| ET[eTeller terminal]

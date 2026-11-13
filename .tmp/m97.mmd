@@ -1,0 +1,5 @@
+flowchart LR
+    STAFF[Admin console action] --> SVCX[service admin API POST]
+    SVCX --> AUDITX[service audit journal + Shield decision upstream]
+    SVCX --> OUTBOX[service outbox → Sentin8:Bus]
+    SYSX[Sentin8:Sys service enablement PUT] --> EVT[sentin8:sys:service:updated → per-tenant vertical init]

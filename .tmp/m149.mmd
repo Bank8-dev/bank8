@@ -1,0 +1,20 @@
+sequenceDiagram
+    participant C as Client (browser / mobile / workload)
+    participant P as Sentin8:Proxy (single ingress)
+    participant S as Service (in-process TLS)
+    participant A as Sentin8:Auth (identity plane)
+    participant SH as Shield (policy engine)
+    participant DB as PostgreSQL (RLS-enforced)
+
+    C->>P: TLS ClientHello (SNI)
+    P->>S: L4 SNI route (encrypted bytes - proxy never sees plaintext)
+    Note over S: 1. Terminate TLS (PQ suite, CA-verified)
+    Note over S: 2. Extract bearer / verify client cert
+    S->>A: Verify token (issuer, signature, expiry, audience, token type)
+    Note over S: 3. Resolve tenant (Host → env, via X-Sentin8-* headers)
+    Note over S: 4. Feature gate
+    S->>A: 5. Resolve roles LIVE (roles never ride in the JWT)
+    S->>SH: 6. Authorize - RBAC + ABAC + ReBAC (fail-closed)
+    S->>DB: 7. Set RLS context on THIS connection, query with explicit env_id
+    Note over S: 8. Execute + emit audit (same-transaction journal)
+    S-->>C: Response

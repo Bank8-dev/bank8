@@ -1,0 +1,5 @@
+flowchart LR
+    P8[Bank8:Payments / Ledger domain change] --> PO[post notification]
+    PO -->|XADD bus stream| BUS[Sentin8:Bus]
+    BUS -->|SSE /subscribe session cookie| SSE[NotificationSseClient in eBank]
+    SSE -->|unread refresh| BADGE[eBank unread badge]

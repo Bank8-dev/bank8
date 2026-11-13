@@ -1,0 +1,54 @@
+erDiagram
+    CUSTOMER_RISK_PROFILE ||--o{ KYC_RECORD : "has"
+    KYC_RECORD ||--o{ BENEFICIAL_OWNER : "discloses"
+    KYC_RECORD ||--o{ PEP_DETERMINATION : "classified by"
+    SANCTIONS_SCREEN ||--o{ ALERT : "raises"
+    MONITORING_RULE ||--o{ ALERT : "triggers"
+    ALERT ||--o{ CASE : "escalates to"
+    CASE ||--o{ SUSPICIOUS_ACTIVITY : "yields"
+
+    CUSTOMER_RISK_PROFILE {
+        uuid id PK
+        text env_id
+        text customer_id
+        text rating
+    }
+    KYC_RECORD {
+        uuid id PK
+        text env_id
+        text customer_id
+        text status
+    }
+    BENEFICIAL_OWNER {
+        uuid id PK
+        uuid kyc_id FK
+        text identity_ref
+    }
+    PEP_DETERMINATION {
+        uuid id PK
+        uuid kyc_id FK
+        boolean is_pep
+    }
+    SANCTIONS_SCREEN {
+        uuid id PK
+        text env_id
+        text subject
+        text result
+    }
+    ALERT {
+        uuid id PK
+        text env_id
+        text source
+        text status
+    }
+    CASE {
+        uuid id PK
+        uuid alert_id FK
+        text status
+        text assignee
+    }
+    SUSPICIOUS_ACTIVITY {
+        uuid id PK
+        uuid case_id FK
+        text report_kind
+    }

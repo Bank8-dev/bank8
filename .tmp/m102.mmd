@@ -1,0 +1,13 @@
+graph TD
+    subgraph SGectf6y["eBank process (Flutter web)"]
+        MAIN[main.dart - bootstrap + theme] --> CTX[EBankContext inherited provider]
+        CTX --> SVC[EBankServices six BffApiClients]
+        CTX --> AUTH[AuthProvider - BFF session]
+        CTX --> PROV[ensureLedgerCustomer provisioning]
+        SHELL[ebank_shell - hash router + sidebar] --> PAGES[pages/*]
+        SHELL --> SSE[NotificationSseClient /subscribe]
+        PAGES --> HOOKS[hooks.dart + fdx_hooks.dart DataState adapters]
+        HOOKS --> SVC
+        PAGES --> ADMIN[pages/admin - instance / products / fdx]
+        ADMIN --> SVC
+    end

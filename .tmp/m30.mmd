@@ -1,0 +1,12 @@
+sequenceDiagram
+    participant L as Bank8:Ledger
+    participant B as Sentin8:Bus
+    participant R as Bank8:Risk
+    participant C as Bank8:Compliance
+    participant RP as Bank8:Reporting
+    L->>B: posting:created (full snapshot)
+    B-->>R: SSE consume
+    R->>R: update exposure + limit state (incremental)
+    R->>B: limit:breached (risk.outbox)
+    B-->>C: alert on breach
+    B-->>RP: filing input

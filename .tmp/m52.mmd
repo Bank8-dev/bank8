@@ -1,0 +1,13 @@
+graph TD
+    B[Teller browser] --> M[main.dart bootstrap]
+    M --> RC[fetchRuntimeContext - own origin, fail-closed]
+    M --> C[ETellerContext - inherited app state]
+    C --> S[ETellerServices - staff + delegated client registries]
+
+    subgraph SGcvnbup["Via Sentin8:BFF - session cookie, tokens server-side"]
+        S -->|staffLedger - never delegated| LED[bank8-ledger - internal accounts]
+        S -->|delegated - X-BFF-Delegation| LED2[bank8-ledger - customer postings]
+        S --> PAY[bank8-payments - tasks + decisions]
+        S --> DEL[BFF /delegate/* - CIBA lifecycle]
+        S --> WS[BFF WebSocket - delegation updates]
+    end

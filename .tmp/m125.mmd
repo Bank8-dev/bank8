@@ -1,0 +1,10 @@
+flowchart TD
+    I["POST /v1/instructions"] -->|"Flow create fails"| AB["no commit - 5xx<br/>client retries (idempotent)"]
+    I -->|"commit ok"| ST["instruction pending/processing"]
+    ST -->|"worker event lost (Bus outage)"| ROW["outbox row unrelayed"]
+    ROW --> RELAY["relay retry ≤10 → produce"]
+    ST -->|"step fails"| FAILED["state=failed + error_message"]
+    FAILED -->|"retry"| PROC["re-drive via Flow (guarded)"]
+    ST -->|"poison event"| DLQ["Bus DLQ after max_retries"]
+    DLQ --> REPLAY["manual replay"]
+    DEC["manual decision"] -->|"timeout"| INTERRUPT["interruption handling"]

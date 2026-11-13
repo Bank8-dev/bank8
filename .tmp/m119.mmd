@@ -1,0 +1,31 @@
+graph TD
+    subgraph platform["Sentin8 platform"]
+        AUTH["Sentin8:Auth"]
+        FLOW["Sentin8:Flow"]
+        CRON["Sentin8:Cron"]
+        FUNC["Sentin8:Func"]
+        BUS["Sentin8:Bus"]
+        STAT["Sentin8:Stat"]
+        STOR["Sentin8:Storage"]
+    end
+    subgraph vertical["bank8 vertical"]
+        PAY["Bank8:Payments<br/>(API + embedded re-drive worker)"]
+        LEDGER["Bank8:Ledger"]
+        PG[("bank8 database")]
+    end
+    subgraph clients
+        BFF["Sentin8:BFF /proxy/payments/*"]
+        APPS["ebank · eteller · admin"]
+    end
+    APPS --> BFF -->|"user tokens"| PAY
+    PAY <-->|"verify / certificate identity (CERTFREE-4V)"| AUTH
+    PAY -->|"create workflows + step profiles"| FLOW
+    FLOW -->|"M2M / v1/internal/steps/execute"| PAY
+    PAY -->|"re-drive via Flow<br/>(embedded worker)"| FLOW
+    CRON -->|"M2M / internal schedules"| PAY
+    PAY -->|"posting steps / public API"| LEDGER
+    PAY -->|"payments.outbox relay"| BUS
+    BUS -->|"family payments<br/>(worker SSE consume)"| PAY
+    PAY -->|"files (ISO archives, confirmations)"| STOR
+    PAY -->|"daily telemetry"| STAT
+    PAY <-->|"schema payments: payments_*"| PG

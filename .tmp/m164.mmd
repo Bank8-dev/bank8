@@ -1,0 +1,10 @@
+graph TD
+    subgraph "bank8 vertical"
+        SVC["Bank8:Payments service<br/>(instruction handlers, flows)"]
+        WKR["payments embedded worker<br/>(event re-drive)"]
+        SDK["bank8 SDK payments client"]
+    end
+    CT["bank8-payments-contracts<br/>Instruction · PayloadType · Iso20022Payload"]
+    SVC -- "Serialize/Deserialize" --> CT
+    WKR -- "payload_type parsing" --> CT
+    SDK -- "Deserialize" --> CT

@@ -1,0 +1,175 @@
+DESIGN.md:18: graph TD
+DESIGN.md:19:     subgraph repo["repo root"]
+DESIGN.md:20:         ROOT["start-platform.sh"]
+DESIGN.md:21:         subgraph sentin8["sentin8/ platform"]
+DESIGN.md:22:             CLI["sentin8-cli<br/>vertical init · enroll"]
+DESIGN.md:23:             CAPT["Sentin8:Captain"]
+DESIGN.md:24:             SVC["18 platform services"]
+DESIGN.md:25:         end
+DESIGN.md:26:         subgraph bank8["bank8/ (this vertical)"]
+DESIGN.md:27:             LEDGER["Bank8:Ledger"]
+DESIGN.md:28:             PAY["Bank8:Payments<br/>(incl. embedded re-drive worker)"]
+DESIGN.md:29:             FDX["OpenFin8:CA"]
+DESIGN.md:30:             RPT["Bank8:Reporting<br/>(filing executor + embedded filing worker)"]
+DESIGN.md:31:             RSK["Bank8:Risk<br/>(measurement + embedded measure worker)"]
+DESIGN.md:32:             CMP["Bank8:Compliance<br/>(AML/CTF + embedded screening worker)"]
+DESIGN.md:33:             APPS["4 Flutter apps"]
+DESIGN.md:34:             SDK["sdk/rust/bank8 +<br/>crates/*/contracts"]
+DESIGN.md:35:             PG[("bank8 database<br/>schemas: ledger · payments · open_ca ·<br/>reporting · risk · compliance")]
+DESIGN.md:36:         end
+DESIGN.md:37:     end
+DESIGN.md:38:     ROOT --> CAPT --> SVC
+DESIGN.md:39:     CLI -->|"creates database + applies init.sql"| PG
+DESIGN.md:40:     CLI -->|"registers services/scopes/triggers/apps"| SVC
+DESIGN.md:41:     CAPT -->|"spawns + health-probes + upgrades"| LEDGER
+DESIGN.md:42:     CAPT --> PAY
+DESIGN.md:43:     CAPT --> FDX
+DESIGN.md:44:     CAPT --> RPT
+DESIGN.md:45:     CAPT --> RSK
+DESIGN.md:46:     CAPT --> CMP
+DESIGN.md:47:     LEDGER & PAY & FDX & RPT & RSK & CMP <--> PG
+DESIGN.md:48:     APPS -->|"BFF proxy"| SVC
+DESIGN.md:58: sequenceDiagram
+DESIGN.md:59:     participant P as Bank8:Payments
+DESIGN.md:60:     participant B as Sentin8:Bus
+DESIGN.md:61:     participant RSK as Bank8:Risk (embedded worker)
+DESIGN.md:62:     participant CMP as Bank8:Compliance (embedded worker)
+DESIGN.md:63:     participant RPT as Bank8:Reporting (embedded worker)
+DESIGN.md:64:     P->>B: instruction:created (full snapshot, outbox → relay)
+DESIGN.md:65:     B-->>RSK: SSE consume (ledger/payments families)
+DESIGN.md:66:     B-->>CMP: SSE consume (ledger/payments families)
+DESIGN.md:67:     RSK->>B: limit:breached (risk.outbox → relay)
+DESIGN.md:68:     B-->>CMP: breach alert (screening family)
+DESIGN.md:69:     CMP->>B: suspicious:detected (compliance.outbox → relay)
+DESIGN.md:70:     B-->>RPT: SSE consume (reporting family)
+DESIGN.md:71:     RPT->>RPT: create STR/SAR/CTR filing run (idempotent per case+kind)
+DESIGN.md:78: sequenceDiagram
+DESIGN.md:79:     participant U as User (app/BFF)
+DESIGN.md:80:     participant P as Bank8:Payments
+DESIGN.md:81:     participant F as Sentin8:Flow
+DESIGN.md:82:     participant W as payments embedded worker
+DESIGN.md:83:     participant L as Bank8:Ledger
+DESIGN.md:84:     participant B as Sentin8:Bus
+DESIGN.md:85:     U->>P: POST /v1/instructions
+DESIGN.md:86:     P->>P: Shield gate + idempotency
+DESIGN.md:87:     P->>F: create workflow (correlation = instruction id)
+DESIGN.md:88:     P->>B: instruction:created (payments.outbox → relay)
+DESIGN.md:89:     B-->>W: SSE push
+DESIGN.md:90:     W->>F: resume workflow
+DESIGN.md:91:     F->>P: POST /v1/internal/steps/execute (M2M)
+DESIGN.md:92:     P->>L: POST /v1/postings (public API - never tables)
+DESIGN.md:93:     L->>B: posting:created (ledger.outbox → relay)
+DESIGN.md:94:     L-->>P: posting id
+DESIGN.md:95:     P->>P: step results + guarded state transition
+DESIGN.md:96:     P->>B: instruction:updated
+DESIGN.md:97:     P-->>U: instruction completed
+DESIGN.md:103: sequenceDiagram
+DESIGN.md:104:     participant R as Data recipient
+DESIGN.md:105:     participant F as OpenFin8:CA
+DESIGN.md:106:     participant A as Sentin8:Auth
+DESIGN.md:107:     participant L as Bank8:Ledger
+DESIGN.md:108:     R->>F: consent start (PAR/PKCE)
+DESIGN.md:109:     F->>A: certificate identity + authorization (hosted consent RFW)
+DESIGN.md:110:     A-->>R: consent grant (openfin8:ca:consent:created event)
+DESIGN.md:111:     R->>F: GET /fdx/v6/accounts (recipient token)
+DESIGN.md:112:     F->>F: consent middleware + CSDF
+DESIGN.md:113:     F->>L: account read (public API, provider env)
+DESIGN.md:114:     L-->>F: account row
+DESIGN.md:115:     F-->>R: minimized payload (CSDF)
+DESIGN.md:121: sequenceDiagram
+DESIGN.md:122:     participant S as Sentin8:Sys
+DESIGN.md:123:     participant B as Sentin8:Bus (sys family)
+DESIGN.md:124:     participant L as Bank8:Ledger
+DESIGN.md:125:     participant F as OpenFin8:CA
+DESIGN.md:126:     S->>B: sentin8:sys:service:updated {enabled}
+DESIGN.md:127:     B-->>L: SSE consumer (group bank8-ledger-envinit)
+DESIGN.md:128:     L->>L: seed internal accounts (idempotent)
+DESIGN.md:129:     B-->>F: SSE consumer (group openfin8-ca-envinit)
+DESIGN.md:130:     F->>F: auto-register provider profile
+DESIGN.md:131:     Note over L,F: platform emits, verticals self-init -<br/>zero vertical knowledge in sentin8
+DESIGN.md:139: erDiagram
+DESIGN.md:140:     BANK8_DB["bank8 database"]
+DESIGN.md:141:     BANK8_DB ||--|| SCHEMA_LEDGER : "schema ledger"
+DESIGN.md:142:     BANK8_DB ||--|| SCHEMA_PAYMENTS : "schema payments"
+DESIGN.md:143:     BANK8_DB ||--|| SCHEMA_OPEN_CA : "schema open_ca"
+DESIGN.md:144:     SCHEMA_LEDGER ||--|{ TBL_LEDGER : "domain tables (44, unprefixed)"
+DESIGN.md:145:     SCHEMA_LEDGER ||--|{ PROD1 : "ledger.outbox + ledger.audit_journal"
+DESIGN.md:146:     SCHEMA_PAYMENTS ||--|{ TBL_PAYMENTS : "domain tables (55, unprefixed)"
+DESIGN.md:147:     SCHEMA_PAYMENTS ||--|{ PROD2 : "payments.outbox + payments.audit_journal"
+DESIGN.md:148:     SCHEMA_OPEN_CA ||--|{ TBL_OPEN_CA : "domain tables (15, unprefixed)"
+DESIGN.md:149:     SCHEMA_OPEN_CA ||--|{ PROD3 : "outbox + audit journal (openfin8_ca schema)"
+DESIGN.md:247: flowchart TD
+DESIGN.md:248:     FLOW_FAIL["Flow create fails"] -->|"at instruction create"| NB["nothing committed - 5xx, idempotent retry"]
+DESIGN.md:249:     RELAY_FAIL["Bus outage"] -->|"producer"| OUTBOX["rows persist in {leaf}.outbox<br/>relay retries ≤10 → manual replay"]
+DESIGN.md:250:     WKR_FAIL["worker dies"] -->|"Bus consumer group"| RED["messages pending - redelivered on restart"]
+DESIGN.md:251:     CRASH["crash mid-transaction"] -->|"atomic"| RB["domain + outbox + audit roll back together"]
+DESIGN.md:252:     DLQ["poison event"] -->|"max_retries"| BUSDLQ["Bus DLQ → manual replay"]
+DESIGN.md:253:     DRAIN["upgrade-instance"] -->|"health gauge drain"| ZERO["zero-downtime swap"]
+DESIGN.md:301: graph TD
+DESIGN.md:302:     U["Unit - per service<br/>modules/state machines/ISO parsing/<br/>CSDF/configs (bank8 total ~800)"] --> I["Integration - per service<br/>policy suites, handler tests,<br/>registration output checks"]
+DESIGN.md:303:     I --> E["E2E - bank8-e2e<br/>UI + BFF proxy only<br/>(no direct DB/psql)"]
+README.md:65: graph TD
+README.md:66:     subgraph apps["Flutter apps (user-facing)"]
+README.md:67:         EB["ebank<br/>(customer)"]
+README.md:68:         ET["eteller<br/>(staff terminal)"]
+README.md:69:         AD["admin<br/>(staff dashboard)"]
+README.md:70:     end
+README.md:71:     subgraph platform["Sentin8 platform"]
+README.md:72:         BFF["Sentin8:BFF<br/>(token guardian)"]
+README.md:73:         AUTH["Sentin8:Auth"]
+README.md:74:         BUS["Sentin8:Bus"]
+README.md:75:         FLOW["Sentin8:Flow"]
+README.md:76:         CRON["Sentin8:Cron"]
+README.md:77:         FUNC["Sentin8:Func"]
+README.md:78:         STOR["Sentin8:Storage"]
+README.md:79:         STAT["Sentin8:Stat"]
+README.md:80:     end
+README.md:81:     subgraph vertical["bank8 vertical"]
+README.md:82:         LEDGER["Bank8:Ledger<br/>(core ledger)"]
+README.md:83:         PAY["Bank8:Payments<br/>(orchestration + embedded re-drive worker)"]
+README.md:84:         FDX["OpenFin8:CA<br/>(open banking)"]
+README.md:85:         RPT["Bank8:Reporting<br/>(filing calendar + embedded filing worker)"]
+README.md:86:         RSK["Bank8:Risk<br/>(measurement + embedded measure worker)"]
+README.md:87:         CMP["Bank8:Compliance<br/>(AML/CTF + embedded screening worker)"]
+README.md:88:         SDK["bank8 SDK facade"]
+README.md:89:         CT["contracts crates"]
+README.md:90:         PG[("bank8 database<br/>one schema per service:<br/>ledger · payments ·<br/>reporting · risk · compliance")]
+README.md:91:     end
+README.md:92:     EB & EF & ET & AD --> BFF
+README.md:93:     BFF -->|"user tokens /proxy/*"| LEDGER & PAY & RPT & RSK & CMP
+README.md:94:     BFF -->|"user tokens /proxy/*"| FDX
+README.md:95:     LEDGER & PAY & RPT & RSK & CMP <-->|"workload certificate / verify"| AUTH
+README.md:96:     FDX <-->|"workload certificate / verify"| AUTH
+README.md:97:     LEDGER & PAY & RPT & RSK & CMP -->|"local outbox → relay"| BUS
+README.md:98:     FDX -->|"local outbox → relay"| BUS
+README.md:99:     BUS -->|"instruction events (embedded worker SSE)"| PAY
+README.md:100:     BUS -->|"posting/customer events (embedded workers SSE)"| RSK & CMP
+README.md:101:     BUS -->|"filing events (embedded worker SSE)"| RPT
+README.md:102:     CMP -->|"suspicious:detected → Bus"| RPT
+README.md:103:     RSK -->|"limit:breached → Bus"| CMP
+README.md:104:     PAY <-->|"workflows + step profiles"| FLOW
+README.md:105:     CRON & FUNC -->|"proxy-back /v1/internal/*"| LEDGER & PAY
+README.md:106:     FUNC -.->|"executes hooks: pre/post_posting · scheduled"| LEDGER
+README.md:107:     PAY -.->|"instruction logics · migrate-wasm"| FUNC
+README.md:108:     LEDGER & PAY & RPT & RSK & CMP <-->|"tables + RLS"| PG
+README.md:109:     SDK --- CT
+SECURITY.md:58: graph TD
+SECURITY.md:59:     subgraph Pillars
+SECURITY.md:60:         P1["I - Post-Quantum Cryptography<br/>X25519MLKEM768 + ML-DSA-65 + SLH-DSA root"]
+SECURITY.md:61:         P2["II - Single Identity Plane<br/>one issuer, one JWKS, token families"]
+SECURITY.md:62:         P3["III - Shield Live Authorization<br/>RBAC + ABAC + ReBAC, roles resolved per request"]
+SECURITY.md:63:         P4["IV - Mandatory Tenant Isolation<br/>FORCE RLS, per-service PG roles, no BYPASSRLS"]
+SECURITY.md:64:         P5["V - Certificate-Only Workload Identity<br/>CN=m2m-{workload}, zero static secrets"]
+SECURITY.md:65:     end
+SECURITY.md:66:     P1 --> E["Every request:<br/>authenticated, authorized,<br/>tenant-scoped, audited"]
+SECURITY.md:67:     P2 --> E
+SECURITY.md:68:     P3 --> E
+SECURITY.md:69:     P4 --> E
+SECURITY.md:70:     P5 --> E
+SECURITY.md:81: sequenceDiagram
+SECURITY.md:82:     participant C as Client (browser / mobile / workload)
+SECURITY.md:83:     participant P as Sentin8:Proxy (single ingress)
+SECURITY.md:84:     participant S as Service (in-process TLS)
+SECURITY.md:85:     participant A as Sentin8:Auth (identity plane)
+SECURITY.md:86:     participant SH as Shield (policy engine)
+SECURITY.md:87:     participant DB as PostgreSQL (RLS-enforced)

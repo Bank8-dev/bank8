@@ -1,0 +1,22 @@
+graph TD
+    subgraph platform["Sentin8 platform"]
+        AUTH["Sentin8:Auth"]
+        BUS["Sentin8:Bus"]
+        FUNC["Sentin8:Func"]
+        STAT["Sentin8:Stat"]
+    end
+    subgraph vertical["bank8 vertical"]
+        RSK["Bank8:Risk<br/>(API + embedded measurement worker)"]
+        LEDGER["Bank8:Ledger"]
+        PAY["Bank8:Payments"]
+        RPT["Bank8:Reporting"]
+        PG[("bank8 database")]
+    end
+    LEDGER -->|"posting:created"| BUS
+    PAY -->|"instruction:completed"| BUS
+    BUS -->|"SSE consume"| RSK
+    RSK -->|"limit:breached"| BUS
+    RSK -->|"public API exposures"| RPT
+    FUNC -->|"hook results"| RSK
+    RSK -->|"telemetry"| STAT
+    RSK <-->|"schema risk"| PG

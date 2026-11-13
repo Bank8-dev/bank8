@@ -1,0 +1,19 @@
+graph TD
+    subgraph L["API layer"]
+        RT["server.rs router"]
+        MW["auth.rs verify + policy.rs require"]
+    end
+    subgraph D["Domain"]
+        CAL["calendar"]
+        TPL["templates / jurisdiction"]
+        GEN["generation engine"]
+        PKG["packaging (XBRL/CSV)"]
+        SUB["submission / amendments"]
+    end
+    subgraph W["Worker"]
+        WKR["worker/mod.rs<br/>(SSE consume + re-drive)"]
+    end
+    RT --> MW --> CAL & TPL & GEN & PKG & SUB
+    WKR --> SUB
+    CAL & GEN & PKG & SUB --> PG[("schema reporting")]
+    GEN -->|"read"| LEDGER_API["Bank8:Ledger public API"]

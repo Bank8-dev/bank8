@@ -1,0 +1,9 @@
+flowchart TD
+    P["POST /v1/postings"] -->|"audit or outbox insert fails"| AB["whole tx aborts<br/>500 - no half-posting"]
+    P -->|"commit ok, relay down"| ROW["row unrelayed in ledger.outbox"]
+    ROW -->|"NOTIFY / 5s poll"| RETRY["relay retry ≤10"]
+    RETRY -->|"Bus returns"| OK["marked relayed"]
+    RETRY -->|"budget exhausted"| STUCK["stays unrelayed - manual replay"]
+    S["schedule batch"] -->|"job fails"| JD["jobs + dlq"]
+    JD -->|"/v1/dlq/{id}/republish"| RE["re-enqueue + republished event"]
+    AS["async posting enqueue"] -->|"bus produce fails"| ERR["request fails - never pending-without-event"]

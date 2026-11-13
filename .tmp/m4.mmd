@@ -1,0 +1,14 @@
+sequenceDiagram
+    participant P as Bank8:Payments
+    participant B as Sentin8:Bus
+    participant RSK as Bank8:Risk (embedded worker)
+    participant CMP as Bank8:Compliance (embedded worker)
+    participant RPT as Bank8:Reporting (embedded worker)
+    P->>B: instruction:created (full snapshot, outbox → relay)
+    B-->>RSK: SSE consume (ledger/payments families)
+    B-->>CMP: SSE consume (ledger/payments families)
+    RSK->>B: limit:breached (risk.outbox → relay)
+    B-->>CMP: breach alert (screening family)
+    CMP->>B: suspicious:detected (compliance.outbox → relay)
+    B-->>RPT: SSE consume (reporting family)
+    RPT->>RPT: create STR/SAR/CTR filing run (idempotent per case+kind)

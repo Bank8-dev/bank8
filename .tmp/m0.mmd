@@ -1,0 +1,45 @@
+graph TD
+    subgraph apps["Flutter apps (user-facing)"]
+        EB["ebank<br/>(customer)"]
+        ET["eteller<br/>(staff terminal)"]
+        AD["admin<br/>(staff dashboard)"]
+    end
+    subgraph platform["Sentin8 platform"]
+        BFF["Sentin8:BFF<br/>(token guardian)"]
+        AUTH["Sentin8:Auth"]
+        BUS["Sentin8:Bus"]
+        FLOW["Sentin8:Flow"]
+        CRON["Sentin8:Cron"]
+        FUNC["Sentin8:Func"]
+        STOR["Sentin8:Storage"]
+        STAT["Sentin8:Stat"]
+    end
+    subgraph vertical["bank8 vertical"]
+        LEDGER["Bank8:Ledger<br/>(core ledger)"]
+        PAY["Bank8:Payments<br/>(orchestration + embedded re-drive worker)"]
+        FDX["OpenFin8<br/>(open banking)"]
+        RPT["Bank8:Reporting<br/>(filing calendar + embedded filing worker)"]
+        RSK["Bank8:Risk<br/>(measurement + embedded measure worker)"]
+        CMP["Bank8:Compliance<br/>(AML/CTF + embedded screening worker)"]
+        SDK["bank8 SDK facade"]
+        CT["contracts crates"]
+        PG[("bank8 database<br/>one schema per service:<br/>ledger · payments ·<br/>reporting · risk · compliance")]
+    end
+    EB & EF & ET & AD --> BFF
+    BFF -->|"user tokens /proxy/*"| LEDGER & PAY & RPT & RSK & CMP
+    BFF -->|"user tokens /proxy/*"| FDX
+    LEDGER & PAY & RPT & RSK & CMP <-->|"workload certificate / verify"| AUTH
+    FDX <-->|"workload certificate / verify"| AUTH
+    LEDGER & PAY & RPT & RSK & CMP -->|"local outbox → relay"| BUS
+    FDX -->|"local outbox → relay"| BUS
+    BUS -->|"instruction events (embedded worker SSE)"| PAY
+    BUS -->|"posting/customer events (embedded workers SSE)"| RSK & CMP
+    BUS -->|"filing events (embedded worker SSE)"| RPT
+    CMP -->|"suspicious:detected → Bus"| RPT
+    RSK -->|"limit:breached → Bus"| CMP
+    PAY <-->|"workflows + step profiles"| FLOW
+    CRON & FUNC -->|"proxy-back /v1/internal/*"| LEDGER & PAY
+    FUNC -.->|"executes hooks: pre/post_posting · scheduled"| LEDGER
+    PAY -.->|"instruction logics · migrate-wasm"| FUNC
+    LEDGER & PAY & RPT & RSK & CMP <-->|"tables + RLS"| PG
+    SDK --- CT

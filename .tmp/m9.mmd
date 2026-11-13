@@ -1,0 +1,7 @@
+flowchart TD
+    FLOW_FAIL["Flow create fails"] -->|"at instruction create"| NB["nothing committed - 5xx, idempotent retry"]
+    RELAY_FAIL["Bus outage"] -->|"producer"| OUTBOX["rows persist in {leaf}.outbox<br/>relay retries ≤10 → manual replay"]
+    WKR_FAIL["worker dies"] -->|"Bus consumer group"| RED["messages pending - redelivered on restart"]
+    CRASH["crash mid-transaction"] -->|"atomic"| RB["domain + outbox + audit roll back together"]
+    DLQ["poison event"] -->|"max_retries"| BUSDLQ["Bus DLQ → manual replay"]
+    DRAIN["upgrade-instance"] -->|"health gauge drain"| ZERO["zero-downtime swap"]

@@ -1,0 +1,3 @@
+graph TD
+    U["Unit - pure logic<br/>modules validators (64 tests)<br/>check_double_entry, params,<br/>contracts, SDK roundtrips"] --> I["Integration - DB-backed<br/>policy suites (engine semantics,<br/>scope-mirror parity, enroll gate)<br/>handler tests vs scratch DB"]
+    I --> E["E2E - platform e2e-ts<br/>UI + BFF proxy flows only<br/>(no direct DB access)"]

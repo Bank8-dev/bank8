@@ -1,0 +1,53 @@
+erDiagram
+    JURISDICTION ||--o{ REGULATOR : "governs"
+    REGULATOR ||--o{ RETURN_TEMPLATE : "requires"
+    REGULATOR ||--o{ REGULATOR_ENDPOINT : "receives via"
+    RETURN_TEMPLATE ||--o{ FILING_OBLIGATION : "scheduled as"
+    FILING_OBLIGATION ||--o{ FILING_RUN : "produces"
+    FILING_RUN ||--o{ SUBMISSION : "yields"
+    SUBMISSION ||--o{ AMENDMENT : "corrected by"
+
+    JURISDICTION {
+        uuid id PK
+        text country_code
+        jsonb metadata
+    }
+    REGULATOR {
+        uuid id PK
+        uuid jurisdiction_id FK
+        text name
+        text authority_kind
+    }
+    RETURN_TEMPLATE {
+        uuid id PK
+        uuid regulator_id FK
+        text return_code
+        text output_format
+        text cadence
+        jsonb schema
+    }
+    FILING_OBLIGATION {
+        uuid id PK
+        uuid template_id FK
+        text env_id
+        timestamp next_due
+        text grace_period
+    }
+    FILING_RUN {
+        uuid id PK
+        uuid obligation_id FK
+        text period
+        text status
+        text idempotency_key
+    }
+    SUBMISSION {
+        uuid id PK
+        uuid run_id FK
+        text regulator_ref
+        text acknowledgment
+    }
+    AMENDMENT {
+        uuid id PK
+        uuid submission_id FK
+        text reason
+    }

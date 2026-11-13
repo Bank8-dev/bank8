@@ -1,0 +1,17 @@
+sequenceDiagram
+    participant T as eTeller terminal
+    participant F as Sentin8:BFF
+    participant A as Sentin8:Auth
+    participant C as Customer device hosted approval
+    participant L as Bank8:Ledger
+    T->>F: POST /delegate/start (customer, scopes, operation label)
+    F->>A: CIBA request (assisted link delivery, poll mode)
+    A-->>C: verification link / assisted login
+    C->>A: customer approves (binding message shown)
+    F-->>T: delegation state via WebSocket + status endpoint
+    T->>F: POST /proxy/bank8-ledger/v1/postings (X-BFF-Delegation, batch_id + idempotency_key)
+    F->>A: delegation → delegated customer token (sub=customer, act=teller, time-boxed)
+    F->>L: POST /v1/postings (Bearer delegated token)
+    L->>L: Shield policy + holder-scoped RLS + posting + outbox event
+    L-->>T: 201 receipt (rendered by receipt page)
+    Note over T,L: expiry drops the delegated registry, expired delegation = staff-only navigation

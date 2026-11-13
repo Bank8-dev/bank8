@@ -1,0 +1,12 @@
+graph TD
+    subgraph "bank8 vertical"
+        RPT["Bank8:Reporting"]
+        RSK["Bank8:Risk"]
+        CMP["Bank8:Compliance"]
+        SDK["bank8 SDK facade<br/>(pub mod regulatory)"]
+    end
+    CT["bank8-regulatory-contracts<br/>Jurisdiction · Regulator · ReturnTemplate<br/>RiskLimit · ReportKind"]
+    RPT -- "serde" --> CT
+    RSK -- "serde" --> CT
+    CMP -- "serde" --> CT
+    SDK -- "re-export as contracts" --> CT

@@ -1,0 +1,13 @@
+graph TD
+    SJ["site.json (6 services · 4 apps · 1 SDK)"]
+    ENGINE["@sentin8/site-engine (pinned)"]
+    DOCS["docs/** (hand-authored)"]
+    REF["docs/reference/** (harvested, gitignored)"]
+    BUILD["docusaurus build"]
+    PAGES["GitHub Pages (bank8.dev)"]
+    SJ --> BUILD
+    ENGINE --> BUILD
+    DOCS --> BUILD
+    REPOS["Bank8-dev repos (public)"] -- "harvest.mjs" --> REF
+    REF --> BUILD
+    BUILD --> PAGES

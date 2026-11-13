@@ -1,0 +1,15 @@
+graph TD
+    subgraph core["Bank8 core"]
+        LEDGER["Bank8:Ledger<br/>(atomic commit)"]
+        PAY["Bank8:Payments<br/>(orchestrator)"]
+    end
+    subgraph platform["Sentin8 platform"]
+        FUNC["Sentin8:Func<br/>(WASM sandbox)"]
+        CRON["Sentin8:Cron"]
+        FLOW["Sentin8:Flow"]
+    end
+    LEDGER -->|"pre_posting · post_posting ·<br/>scheduled_event · activation/deactivation"| FUNC
+    LEDGER -->|"supervisor contracts"| FUNC
+    PAY -->|"BasicStep hooks ·<br/>instruction logic"| FUNC
+    FUNC -->|"host calls<br/>proxy-back /v1/internal/func-host"| LEDGER
+    CRON & FLOW -->|"invoke modules"| FUNC

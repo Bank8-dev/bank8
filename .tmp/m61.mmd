@@ -1,0 +1,24 @@
+graph TD
+    subgraph "Sentin8 platform"
+        AUTH["Sentin8:Auth<br/>(tokens, DCR)"]
+        POLICY["Shield engine<br/>(embedded sentin8-policy)"]
+        BUS["Sentin8:Bus"]
+        CRON["Sentin8:Cron"]
+        FUNC["Sentin8:Func"]
+        SYS["Sentin8:Sys<br/>(service enablement events)"]
+        STAT["Sentin8:Stat"]
+    end
+    subgraph "bank8 vertical"
+        LEDGER["Bank8:Ledger service"]
+        PG[("bank8 database<br/>schema ledger: ledger_* · ledger.outbox<br/>ledger.audit_journal")]
+        BFF["Sentin8:BFF /proxy/ledger/*"]
+    end
+    BFF -- "user token / HTTPS /v1/*" --> LEDGER
+    LEDGER -- "verify + step-5 gate" --> POLICY
+    LEDGER -- "local outbox → relay" --> BUS
+    SYS -- "sys family: service:updated" --> BUS
+    BUS -- "env-init consumer" --> LEDGER
+    CRON -- "proxy-back /v1/internal/schedules/run" --> LEDGER
+    FUNC -- "proxy-back /v1/internal/func-host" --> LEDGER
+    LEDGER -- "M2M / daily telemetry" --> STAT
+    LEDGER -- "certificate identity (CERTFREE-4V)" --> AUTH

@@ -1,0 +1,13 @@
+sequenceDiagram
+    participant P as CashDepositPage
+    participant R as InternalAccountResolver
+    participant F as Sentin8:BFF
+    participant L as Bank8:Ledger
+    P->>R: cashDeposit()
+    alt cache miss
+        R->>F: GET /proxy/bank8-ledger/v1/accounts?account_type=internal&env_id=… (staffLedger client)
+        F->>L: GET /v1/accounts (Bearer staff token, org-validated env override)
+        L-->>R: internal accounts
+        R-->>R: cache by nickname
+    end
+    R-->>P: counterparty account id
